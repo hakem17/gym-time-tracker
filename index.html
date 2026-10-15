@@ -317,7 +317,18 @@ const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم
 const KEY="gym-time-tracker-v1";
 
 /* ---------- storage ---------- */
+const PLAN_VER="2026-10-15";
 let D=load();
+/* new targets from the coach update automatically; your own edits to names/sets/order stay */
+(function syncTargets(){
+  if(D.planVer===PLAN_VER)return;
+  Object.keys(DEFAULTS).forEach(k=>{
+    if(!Array.isArray(DEFAULTS[k])||!Array.isArray(D.plans[k]))return;
+    DEFAULTS[k].forEach(def=>{const mine=D.plans[k].find(x=>x.id===def.id);if(mine)mine.target=def.target;else D.plans[k].push(JSON.parse(JSON.stringify(def)))});
+  });
+  if(!D.plans.warmup)D.plans.warmup=JSON.parse(JSON.stringify(DEFAULTS.warmup));
+  D.planVer=PLAN_VER;save();
+})();
 function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.plans)return v}catch(e){}
   return {plans:JSON.parse(JSON.stringify(DEFAULTS)),history:[],active:null};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
