@@ -211,7 +211,7 @@ function wireLock(root){const b=root.querySelector("#passBtn");if(!b)return;cons
 function renderProgress(){
   const root=document.getElementById("progress");
   const S=allSessions(),EX=exerciseSeries(S),SC=sessionScores(S,EX);
-  const now=Date.now(),wk=S.filter(h=>h.startedAt>now-7*DAY),prev=S.filter(h=>h.startedAt<=now-7*DAY&&h.startedAt>now-14*DAY);
+  const now=Date.now(),ws=weekStart(),wk=S.filter(h=>h.startedAt>=ws),prev=S.filter(h=>h.startedAt<ws&&h.startedAt>=ws-7*DAY);
   const durs=wk.map(sessDur).filter(v=>v!=null),avgDur=durs.length?Math.round(durs.reduce((a,b)=>a+b,0)/durs.length):null;
   const kpi=(k,v,of,d)=>`<div class="kpi"><div class="k">${k}</div><div class="v num">${v}${of!=null?`<small> / ${of}</small>`:""}</div>${of!=null?`<div class="meter"><i style="width:${Math.min(100,v/of*100)}%"></i></div>`:""}${d?`<div class="d">${d}</div>`:""}</div>`;
   const scored=SC.filter(x=>x.score!=null);
@@ -225,15 +225,15 @@ function renderProgress(){
   const vol={};wk.forEach(h=>h.items.forEach(x=>{const m=MUSCLE[x.id];if(m&&x.logs)vol[m]=(vol[m]||0)+x.logs.length}));
   const vmax=Math.max(12,...Object.values(vol));
   // 4 rolling weeks
-  const weeks=[0,1,2,3].map(i=>{const a=now-(i+1)*7*DAY,b=now-i*7*DAY,ss=S.filter(h=>h.startedAt>a&&h.startedAt<=b);
-    const sc=SC.filter(x=>x.score!=null&&x.h.startedAt>a&&x.h.startedAt<=b);
-    return{lbl:i?`من ${i*7+1} لـ ${(i+1)*7} يوم`:"آخر 7 أيام",n:ss.length,c:ss.filter(cardioDone).length,ab:ss.filter(absDone).length,
+  const weeks=[0,1,2,3].map(i=>{const a=ws-i*7*DAY,b=a+7*DAY,ss=S.filter(h=>h.startedAt>=a&&h.startedAt<b);
+    const sc=SC.filter(x=>x.score!=null&&x.h.startedAt>=a&&x.h.startedAt<b);
+    return{lbl:i?`أسبوع ${shortD(a)}`:"الأسبوع ده",n:ss.length,c:ss.filter(cardioDone).length,ab:ss.filter(absDone).length,
       g:sc.length?sc.reduce((s,x)=>s+x.score,0)/sc.length:null}});
   const dayLbl=k=>({push:"Push",pull:"Pull",legs:"Legs"}[k]||k);
   const list=Object.values(EX).filter(e=>!e.abs&&(progDay==="all"||e.day===progDay)).sort((a,b)=>(a.retired-b.retired)||((b.cur.at?.(-1)?.t||0)-(a.cur.at?.(-1)?.t||0)));
   root.innerHTML=head("التقدم",`${S.length} تمرينة متسجلة`)+
   (coachState!=="ok"?lockCard("التمرينات القديمة من الشات (من 27 سبتمبر) جوه داتا الكوتش."):"")+
-  `<div class="kpis">${kpi("تمرينات آخر 7 أيام",wk.length,6,prev.length?`الأسبوع اللي قبله ${prev.length}`:"")}
+  `<div class="kpis">${kpi("تمرينات الأسبوع ده",wk.length,6,`الأسبوع اللي فات ${prev.length}`)}
     ${kpi("كارديو",wk.filter(cardioDone).length,4)}${kpi("بطن",wk.filter(absDone).length,3)}
     ${kpi("متوسط مدة التمرينة",avgDur!=null?hm(avgDur):"—",null,avgDur!=null?"من التمرينات اللي اتسجل وقتها":"")}</div>`+
   `<div class="dcard"><h2>أحسن وأضعف تمرينة</h2><p class="sub">متوسط تغيّر القوة في كل تمرين مقارنة بالمرة اللي قبلها</p>
@@ -242,7 +242,7 @@ function renderProgress(){
   `<div class="dcard"><h2>أكتر تمارين اتحسنت</h2><p class="sub">القوة التقديرية (e1RM) في آخر 3 مرات. بين القوسين: من أول مرة</p>
     <ul class="list">${top.map(e=>`<li><span>${esc(e.name)}</span><span><span class="num" dir="ltr">${pct(e.recent)}</span> <span class="muted" dir="ltr">(${pct(e.change)})</span></span></li>`).join("")||'<li class="empty">لسه.</li>'}</ul>
     ${stalled.length?`<h2 style="margin-top:14px">واقفة</h2><p class="sub">مزادتش في آخر مرتين</p><ul class="list">${stalled.map(e=>`<li><span>${esc(e.name)}</span><span class="muted">${dayLbl(e.day)}</span></li>`).join("")}</ul>`:""}</div>`+
-  `<div class="dcard"><h2>ستات كل عضلة</h2><p class="sub">آخر 7 أيام. الخط المتقطع = 10 ستات</p>
+  `<div class="dcard"><h2>ستات كل عضلة</h2><p class="sub">الأسبوع ده (من السبت). الخط المتقطع = 10 ستات</p>
     ${MUSCLE_ORDER.filter(m=>vol[m]).map(m=>`<div style="display:grid;grid-template-columns:96px 1fr 28px;align-items:center;gap:8px;margin:6px 0;font-size:14px">
       <span>${m}</span><span style="position:relative;height:12px;background:var(--bg);border-radius:6px;display:block">
       <i style="position:absolute;inset:0 0 0 auto;width:${vol[m]/vmax*100}%;background:var(--series);border-radius:6px;display:block"></i>
@@ -251,7 +251,7 @@ function renderProgress(){
   `<div class="dcard"><h2>الالتزام آخر 4 أسابيع</h2>
     <table class="dt"><thead><tr><th>الفترة</th><th>تمرين</th><th>كارديو</th><th>بطن</th><th>التقدم</th></tr></thead><tbody>
     ${weeks.map(w=>`<tr><td>${w.lbl}</td><td class="n">${w.n}/6</td><td class="n">${w.c}/4</td><td class="n">${w.ab}/3</td><td class="n">${w.g!=null?pct(w.g):"—"}</td></tr>`).join("")}</tbody></table>
-    ${skips.length?`<p class="sub" style="margin-top:10px">اتشال آخر 7 أيام: ${skips.length} (${Object.entries(reasons).map(([r,c])=>`${r} ${c}`).join("، ")})</p>`:""}</div>`+
+    ${skips.length?`<p class="sub" style="margin-top:10px">اتشال الأسبوع ده: ${skips.length} (${Object.entries(reasons).map(([r,c])=>`${r} ${c}`).join("، ")})</p>`:""}</div>`+
   `<div class="seg" id="progSeg">${["all","push","pull","legs"].map(k=>`<button class="chip" data-k="${k}" aria-pressed="${progDay===k}">${k==="all"?"الكل":dayLbl(k)}</button>`).join("")}</div>`+
   `<div class="dcard"><h2>كل تمرين</h2><p class="sub">اضغط على أي تمرين تشوف الشارت بتاعه</p><div id="exList2">${list.map(e=>`<button class="exrow" data-id="${e.id}"><span>${esc(e.name)}<small>${e.retired?"اتشال من البرنامج":`${e.cur.length} مرة${e.kind==="reps"?" • بالعدات":""}`}</small></span>${spark(e.cur)}<span class="chg">${e.change!=null?pct(e.change):"—"}</span></button><div class="exchart hidden" id="ch-${e.id}"></div>`).join("")}</div></div>`;
   wireLock(root);

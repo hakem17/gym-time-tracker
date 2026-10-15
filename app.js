@@ -76,16 +76,37 @@ function hintFor(ex){
 
 /* ---------- HOME ---------- */
 let pickedDay=null,pickedExtras={};
+/* Egyptian week: starts Saturday */
+function weekStart(t=Date.now()){const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+1)%7));return d.getTime()}
+const ROTATION=["legs","push","pull"];
+function barbell(done,total=6){
+  // plates load from the collars outward, alternating sides
+  const pos=[[-1,0],[1,0],[-1,1],[1,1],[-1,2],[1,2]].slice(0,total);
+  let s=`<svg class="bb" viewBox="0 0 340 96" aria-hidden="true"><rect class="bar" x="8" y="44" width="324" height="8" rx="4"/><rect class="bar" x="104" y="36" width="8" height="24" rx="2"/><rect class="bar" x="228" y="36" width="8" height="24" rx="2"/>`;
+  pos.forEach(([side,k],i)=>{const h=80-k*10,x=side<0?86-k*22:242+k*22,y=48-h/2;
+    s+=i<done?`<rect class="plate" x="${x}" y="${y}" width="16" height="${h}" rx="4"/>`:`<rect class="slot" x="${x+1}" y="${y+1}" width="14" height="${h-2}" rx="4"/>`});
+  return s+"</svg>";
+}
+const dots=(n,of)=>`<span class="dots">${Array.from({length:of},(_,i)=>`<i class="${i<n?"on":""}"></i>`).join("")}</span>`;
 function renderHome(){
   $("resumeBtn").classList.toggle("hidden",!D.active);
-  $("days").innerHTML=Object.keys(DAYS).map(k=>{
-    const last=[...histAll()].reverse().find(h=>h.day===k);const n=histAll().filter(h=>h.day===k).length;
-    return `<button class="day" data-day="${k}"><div><b>${DAYS[k].t}</b><span>${DAYS[k].d}${last?` • آخر مرة ${dateLbl(last.startedAt)}`:""}${n?` • المرة رقم ${n+1}`:""}</span></div><span class="go">ابدأ</span></button>`}).join("");
+  const H=histAll(),ws=weekStart(),wk=H.filter(h=>h.startedAt>=ws);
+  const nCardio=wk.filter(h=>h.items.some(x=>x.timed&&x.id==="cardio"&&x.done)).length,nAbs=wk.filter(h=>h.items.some(x=>x.abs&&x.logs&&x.logs.length)).length;
+  $("weekHero").innerHTML=`<div class="hero"><div class="hero-top"><h2>الأسبوع ده</h2><span class="cnt num">${wk.length}<small> / 6</small></span></div>
+    ${barbell(Math.min(6,wk.length))}<div class="tally"><span>كارديو${dots(Math.min(4,nCardio),4)}</span><span>بطن${dots(Math.min(3,nAbs),3)}</span></div></div>`;
+  const last=H[H.length-1],nextDay=last?ROTATION[(ROTATION.indexOf(last.day)+1)%3]:"legs";
+  const card=(k,next)=>{const lastK=[...H].reverse().find(h=>h.day===k),n=H.filter(h=>h.day===k).length;
+    const meta=`${DAYS[k].d}${lastK?` • آخر مرة ${new Date(lastK.startedAt).toLocaleDateString("ar-EG",{weekday:"long"})}`:""}`;
+    if(!next)return `<button class="day mini" data-day="${k}"><div><b>${DAYS[k].t}</b><span>${meta}</span></div><span class="go">ابدأ</span></button>`;
+    const prev=(D.plans[k]||[]).filter(x=>!x.optional).slice(0,3);
+    return `<button class="day next" data-day="${k}"><span class="lbl">الجاي في الدور${n?` • المرة رقم ${n+1}`:""}</span><b>${DAYS[k].t}</b><span>${meta}</span>
+      <ul>${prev.map(x=>`<li><span>${esc(x.name)}</span><em>${esc(x.target||"")}</em></li>`).join("")}</ul><span class="go">ابدأ ${DAYS[k].t}</span></button>`};
+  $("days").innerHTML=card(nextDay,true)+ROTATION.filter(k=>k!==nextDay).map(k=>card(k,false)).join("");
   $("days").querySelectorAll(".day").forEach(b=>b.onclick=()=>openSetup(b.dataset.day,b));
   $("days").classList.remove("hidden");$("setup").classList.add("hidden");
-  const H=[...D.history].reverse().slice(0,8);
-  $("histBox").classList.toggle("hidden",!H.length);
-  $("histList").innerHTML=H.map(h=>`<li><span>${DAYS[h.day].t} • ${dateLbl(h.startedAt)}</span><button data-id="${h.startedAt}">الملخص</button></li>`).join("");
+  const HL=[...D.history].reverse().slice(0,8);
+  $("histBox").classList.toggle("hidden",!HL.length);
+  $("histList").innerHTML=HL.map(h=>`<li><span>${DAYS[h.day].t} • ${dateLbl(h.startedAt)}</span><button data-id="${h.startedAt}">الملخص</button></li>`).join("");
   $("histList").querySelectorAll("button").forEach(b=>b.onclick=()=>{const h=D.history.find(x=>x.startedAt==b.dataset.id);openSummary(h)});
 }
 function openSetup(day,btn){

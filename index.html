@@ -53,7 +53,30 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .iconbtn{padding:8px 12px;background:transparent;border:1.5px solid var(--line);font-size:15px;font-weight:600}
 
 /* home */
-.days{display:grid;gap:12px;margin-top:20px}
+.days{display:grid;gap:10px;margin-top:12px}
+/* week hero: a barbell loaded one plate per workout */
+.hero{margin-top:18px;padding:18px 16px 14px;border-radius:24px;background:var(--surface)}
+.hero-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.hero-top h2{font-size:20px}
+.hero-top .cnt{font-size:30px;font-weight:700;line-height:1}
+.hero-top .cnt small{font-size:16px;color:var(--muted);font-weight:600}
+.bb{display:block;width:100%;height:auto;margin:10px 0 6px;direction:ltr}
+.bb .bar{fill:var(--muted)}
+.bb .plate{fill:var(--plate)}
+.bb .slot{fill:none;stroke:var(--line);stroke-width:2;stroke-dasharray:5 4}
+.tally{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted);font-weight:600}
+.tally .dots{display:inline-flex;gap:5px;margin-inline-start:8px;vertical-align:middle}
+.tally .dots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);display:block}
+.tally .dots i.on{background:var(--ink);border-color:var(--ink)}
+.day.next{display:block;padding:18px;border:2px solid var(--plate);border-radius:20px}
+.day.next .lbl{font-size:13px;font-weight:700;color:var(--plate)}
+.day.next b{font-size:34px;line-height:1.1;margin:2px 0}
+.day.next ul{list-style:none;margin:12px 0 0;padding:12px 0 0;border-top:1px solid var(--line);display:grid;gap:6px}
+.day.next li{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.day.next li em{font-style:normal;color:var(--muted);text-align:left}
+.day.next .go{display:block;margin-top:14px;text-align:center;background:var(--plate);color:#fff;border-radius:14px;padding:14px;font-size:18px}
+.day.mini{padding:14px 16px;border-radius:16px}
+.day.mini b{font-size:20px}
 .day{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:right;padding:20px 18px;
   background:var(--surface);border:1.5px solid var(--line);border-radius:18px}
 .day b{font-size:26px;display:block;direction:ltr;text-align:right}
@@ -153,6 +176,9 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
 .tabbar button{flex:1;max-width:120px;background:none;padding:6px 2px;font-size:13px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:12px}
 .tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tabbar button[aria-current="page"]{color:var(--plate)}
+.tabbar button[aria-current="page"] svg{stroke-width:2.6}
+.tabbar button{position:relative}
+.tabbar button[aria-current="page"]::before{content:"";position:absolute;top:-7px;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--plate)}
 /* session edit */
 .edEx{padding:12px 0;border-bottom:1px solid var(--line)}
 .edHead{font-weight:700;margin-bottom:6px}
@@ -164,11 +190,11 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
 .dhead h1{font-size:24px}
 .seg{display:flex;gap:6px;margin:14px 0 4px;overflow-x:auto}
 .seg .chip{white-space:nowrap}
-.dcard{margin-top:14px;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:16px}
+.dcard{margin-top:12px;background:var(--surface);border:0;border-radius:20px;padding:16px}
 .dcard h2{font-size:18px;margin-bottom:2px}
 .dcard .sub{font-size:13px;color:var(--muted);margin:0 0 10px}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.kpi{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
+.kpi{background:var(--surface);border:0;border-radius:16px;padding:12px 14px}
 .kpi .k{font-size:13px;color:var(--muted)}
 .kpi .v{font-size:28px;font-weight:700;line-height:1.15}
 .kpi .v small{font-size:15px;font-weight:600;color:var(--muted)}
@@ -233,6 +259,7 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
     <button class="iconbtn" id="toSettings">الإعدادات</button>
   </div>
   <button class="resume hidden" id="resumeBtn">كمّل التمرينة المفتوحة</button>
+  <div id="weekHero"></div>
   <div class="days" id="days"></div>
   <div class="setup hidden" id="setup">
     <h2 id="setupTitle"></h2>
