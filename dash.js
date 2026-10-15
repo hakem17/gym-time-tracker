@@ -231,29 +231,23 @@ function renderProgress(){
       g:sc.length?sc.reduce((s,x)=>s+x.score,0)/sc.length:null}});
   const dayLbl=k=>({push:"Push",pull:"Pull",legs:"Legs"}[k]||k);
   const list=Object.values(EX).filter(e=>!e.abs&&(progDay==="all"||e.day===progDay)).sort((a,b)=>(a.retired-b.retired)||((b.cur.at?.(-1)?.t||0)-(a.cur.at?.(-1)?.t||0)));
-  root.innerHTML=head("التقدم",`${S.length} تمرينة متسجلة`)+
-  (coachState!=="ok"?lockCard("التمرينات القديمة من الشات (من 27 سبتمبر) جوه داتا الكوتش."):"")+
-  `<div class="kpis">${kpi("تمرينات الأسبوع ده",wk.length,6,`الأسبوع اللي فات ${prev.length}`)}
-    ${kpi("كارديو",wk.filter(cardioDone).length,4)}${kpi("بطن",wk.filter(absDone).length,3)}
-    ${kpi("متوسط مدة التمرينة",avgDur!=null?hm(avgDur):"—",null,avgDur!=null?"من التمرينات اللي اتسجل وقتها":"")}</div>`+
-  `<div class="dcard"><h2>أحسن وأضعف تمرينة</h2><p class="sub">متوسط تغيّر القوة في كل تمرين مقارنة بالمرة اللي قبلها</p>
-    ${best?`<div class="pair"><div class="callout"><div class="k">الأحسن</div><b>${dayLbl(best.h.day)} • ${shortD(best.h.startedAt)}</b><span class="num">${pct(best.score)}</span> <span class="muted">في ${best.n} تمارين</span></div>
-      <div class="callout"><div class="k">الأضعف</div><b>${dayLbl(worst.h.day)} • ${shortD(worst.h.startedAt)}</b><span class="num">${pct(worst.score)}</span> <span class="muted">في ${worst.n} تمارين</span></div></div>`:`<p class="empty">محتاج تمرينتين على الأقل من نفس اليوم.</p>`}</div>`+
-  `<div class="dcard"><h2>أكتر تمارين اتحسنت</h2><p class="sub">القوة التقديرية (e1RM) في آخر 3 مرات. بين القوسين: من أول مرة</p>
-    <ul class="list">${top.map(e=>`<li><span>${esc(e.name)}</span><span><span class="num" dir="ltr">${pct(e.recent)}</span> <span class="muted" dir="ltr">(${pct(e.change)})</span></span></li>`).join("")||'<li class="empty">لسه.</li>'}</ul>
-    ${stalled.length?`<h2 style="margin-top:14px">واقفة</h2><p class="sub">مزادتش في آخر مرتين</p><ul class="list">${stalled.map(e=>`<li><span>${esc(e.name)}</span><span class="muted">${dayLbl(e.day)}</span></li>`).join("")}</ul>`:""}</div>`+
-  `<div class="dcard"><h2>ستات كل عضلة</h2><p class="sub">الأسبوع ده (من السبت). الخط المتقطع = 10 ستات</p>
-    ${MUSCLE_ORDER.filter(m=>vol[m]).map(m=>`<div style="display:grid;grid-template-columns:96px 1fr 28px;align-items:center;gap:8px;margin:6px 0;font-size:14px">
-      <span>${m}</span><span style="position:relative;height:12px;background:var(--bg);border-radius:6px;display:block">
-      <i style="position:absolute;inset:0 0 0 auto;width:${vol[m]/vmax*100}%;background:var(--series);border-radius:6px;display:block"></i>
-      <i style="position:absolute;top:-3px;bottom:-3px;right:${10/vmax*100}%;border-right:2px dashed var(--muted);display:block"></i></span>
-      <span class="num" style="text-align:left">${vol[m]}</span></div>`).join("")||'<p class="empty">مفيش تمرينات آخر 7 أيام.</p>'}</div>`+
-  `<div class="dcard"><h2>الالتزام آخر 4 أسابيع</h2>
-    <table class="dt"><thead><tr><th>الفترة</th><th>تمرين</th><th>كارديو</th><th>بطن</th><th>التقدم</th></tr></thead><tbody>
-    ${weeks.map(w=>`<tr><td>${w.lbl}</td><td class="n">${w.n}/6</td><td class="n">${w.c}/4</td><td class="n">${w.ab}/3</td><td class="n">${w.g!=null?pct(w.g):"—"}</td></tr>`).join("")}</tbody></table>
-    ${skips.length?`<p class="sub" style="margin-top:10px">اتشال الأسبوع ده: ${skips.length} (${Object.entries(reasons).map(([r,c])=>`${r} ${c}`).join("، ")})</p>`:""}</div>`+
+  const bestEx=top[0];
+  root.innerHTML=head("التقدم","")+
+  (coachState!=="ok"?lockCard("التمرينات القديمة من الشات جوه داتا الكوتش."):"")+
+  `<div class="dcard summary"><p>الأسبوع ده عملت <b class="num">${wk.length}</b> تمرينات من 6، وكارديو <b class="num">${wk.filter(cardioDone).length}</b> من 4، وبطن <b class="num">${wk.filter(absDone).length}</b> من 3.</p>
+    ${bestEx?`<p>أكتر تمرين اتحسن مؤخراً: <b>${esc(bestEx.name)}</b> <span class="num" dir="ltr">${pct(bestEx.recent)}</span>.</p>`:""}
+    ${stalled.length?`<p>واقف (مزادش آخر مرتين): <b>${stalled.map(e=>esc(e.name)).join("، ")}</b>.</p>`:"<p>مفيش تمرين واقف 👌</p>"}</div>`+
   `<div class="seg" id="progSeg">${["all","push","pull","legs"].map(k=>`<button class="chip" data-k="${k}" aria-pressed="${progDay===k}">${k==="all"?"الكل":dayLbl(k)}</button>`).join("")}</div>`+
-  `<div class="dcard"><h2>كل تمرين</h2><p class="sub">اضغط على أي تمرين تشوف الشارت بتاعه</p><div id="exList2">${list.map(e=>`<button class="exrow" data-id="${e.id}"><span>${esc(e.name)}<small>${e.retired?"اتشال من البرنامج":`${e.cur.length} مرة${e.kind==="reps"?" • بالعدات":""}`}</small></span>${spark(e.cur)}<span class="chg">${e.change!=null?pct(e.change):"—"}</span></button><div class="exchart hidden" id="ch-${e.id}"></div>`).join("")}</div></div>`;
+  `<div class="dcard"><h2>قوتك في كل تمرين</h2><p class="sub">الرقم = الفرق من أول مرة. اضغط على التمرين تشوف الشارت</p><div id="exList2">${list.filter(e=>!e.retired).map(e=>`<button class="exrow" data-id="${e.id}"><span>${esc(e.name)}<small>${e.cur.length} مرة</small></span>${spark(e.cur)}<span class="chg">${e.change!=null?pct(e.change):"جديد"}</span></button><div class="exchart hidden" id="ch-${e.id}"></div>`).join("")}</div></div>`+
+  `<details class="more"><summary>تفاصيل أكتر</summary>
+    ${best?`<h3 class="sh">أحسن وأضعف تمرينة</h3><ul class="list"><li><span>الأحسن: ${dayLbl(best.h.day)} ${shortD(best.h.startedAt)}</span><span class="num" dir="ltr">${pct(best.score)}</span></li><li><span>الأضعف: ${dayLbl(worst.h.day)} ${shortD(worst.h.startedAt)}</span><span class="num" dir="ltr">${pct(worst.score)}</span></li></ul>`:""}
+    <h3 class="sh">ستات كل عضلة الأسبوع ده</h3>
+    <ul class="list">${MUSCLE_ORDER.filter(m=>vol[m]).map(m=>`<li><span>${m}</span><span class="num">${vol[m]}</span></li>`).join("")||'<li class="empty">لسه مفيش.</li>'}</ul>
+    <h3 class="sh">آخر 4 أسابيع</h3>
+    <table class="dt"><thead><tr><th>الأسبوع</th><th>تمرين</th><th>كارديو</th><th>بطن</th></tr></thead><tbody>
+    ${weeks.map(w=>`<tr><td>${w.lbl}</td><td class="n">${w.n}/6</td><td class="n">${w.c}/4</td><td class="n">${w.ab}/3</td></tr>`).join("")}</tbody></table>
+    ${skips.length?`<p class="sub" style="margin-top:10px">اتشال الأسبوع ده: ${Object.entries(reasons).map(([r,c])=>`${r} ${c}`).join("، ")}</p>`:""}
+  </details>`;
   wireLock(root);
   root.querySelectorAll("#progSeg .chip").forEach(b=>b.onclick=()=>{progDay=b.dataset.k;renderProgress()});
   root.querySelectorAll(".exrow").forEach(b=>b.onclick=()=>{const e=EX[b.dataset.id],box=document.getElementById("ch-"+e.id);
@@ -286,22 +280,26 @@ function renderBody(){
     ${tile("الدهون",lastIb?lastIb.fat_pct:null,"%",lastIb?`InBody ${shortD(parseD(lastIb.date))}`:"")}
     ${tile("العضل",lastIb?lastIb.smm:null,"كجم","Skeletal Muscle")}
     ${tile("الوسط",wa.length?wa[wa.length-1].cm:null,"سم",wD!=null?`<span dir="ltr">${wD>0?"+":""}${wD}</span> سم من ${shortD(parseD(wa[0].date))}`:"")}</div>`+
-  `<div class="dcard"><h2>الوسط عند السرة</h2><p class="sub">صايم الصبح. أسرع مؤشر للدهون بين قياسات الـ InBody</p><div class="chart" id="cWaist"></div></div>`+
-  `<div class="dcard"><h2>الدهون %</h2><p class="sub">الدايرة الفاضية = قياس مش نضيف (بعد تمرين)</p><div class="chart" id="cFat"></div></div>`+
-  `<div class="dcard"><h2>العضل (كجم)</h2><p class="sub">الهدف في التنشيف: يفضل ثابت</p><div class="chart" id="cSmm"></div></div>`+
-  `<div class="dcard"><h2>الوزن (كجم)</h2><div class="chart" id="cWt"></div></div>`+
-  (latest?`<div class="dcard"><h2>العضلات من الصور</h2><p class="sub">تقييم بالعين يوم ${shortD(parseD(latest.date))}، مش قياس. ${esc(latest.summary||"")}</p>
+  `<div class="dcard"><h2>الوسط</h2><p class="sub">لو بينزل، يبقى الدهون بتنزل</p><div class="chart" id="cWaist"></div></div>`+
+
+  (latest?`<div class="dcard"><h2>العضلات من الصور</h2><p class="sub">تقييم بالعين يوم ${shortD(parseD(latest.date))}</p>
     <div class="pair" style="margin-bottom:8px"><div class="callout"><div class="k">الأقوى</div>${areas.filter(([,a])=>a.level==="strong").map(([k])=>`<b>${AREA[k]||k}</b>`).join("")||"—"}</div>
     <div class="callout"><div class="k">الأضعف</div>${areas.filter(([,a])=>a.level==="weak").map(([k])=>`<b>${AREA[k]||k}</b>`).join("")||"—"}</div></div>
     <ul class="list">${areas.map(([k,a])=>`<li><span>${AREA[k]||k}<small style="display:block;color:var(--muted);font-size:12px">${esc(a.note||"")}</small></span><span class="lvl ${LVL[a.level]?.[1]||""}">${LVL[a.level]?.[0]||a.level}</span></li>`).join("")}</ul>
     ${P.length>1?`<details class="tbl"><summary>كل التقييمات</summary><div style="overflow-x:auto"><table class="matrix"><tr><th></th>${P.map(p=>`<th>${shortD(parseD(p.date))}</th>`).join("")}</tr>
       ${Object.keys(AREA).map(k=>`<tr><td>${AREA[k]}</td>${P.map(p=>{const a=p.areas&&p.areas[k];return`<td>${a?`<span class="lvl ${LVL[a.level]?.[1]||""}">${LVL[a.level]?.[0]||"—"}</span>`:"—"}</td>`}).join("")}</tr>`).join("")}</table></div></details>`:""}
-    <p class="sub" style="margin-top:10px">ابعت صور جديدة في Body Tracker بنفس الإضاءة والزاوية، والتقييم هيتحدث هنا.</p></div>`:"");
+    </div>`:"")+
+  `<details class="more" id="ibMore"><summary>شارتس الـ InBody</summary>
+    <h3 class="sh">الدهون %</h3><p class="sub">الدايرة الفاضية = قياس بعد تمرين (مش دقيق)</p><div class="chart" id="cFat"></div>
+    <h3 class="sh">العضل (كجم)</h3><div class="chart" id="cSmm"></div>
+    <h3 class="sh">الوزن (كجم)</h3><div class="chart" id="cWt"></div></details>`;
   const pt=(d,y,t,h)=>({t:parseD(d),y,tip:t,hollow:h});
   lineChart(document.getElementById("cWaist"),wa.map(x=>pt(x.date,x.cm,`<b>${shortD(parseD(x.date))}</b><br>${x.cm} سم${x.note?`<br>${esc(x.note)}`:""}`)),{label:"الوسط"});
+  const drawIb=()=>{
   lineChart(document.getElementById("cFat"),ib.map(x=>pt(x.date,x.fat_pct,`<b>${shortD(parseD(x.date))}</b><br>${x.fat_pct}% (${x.fat_kg} كجم)${x.clean?"":"<br>مش نضيف: بعد تمرين"}`,!x.clean)),{label:"الدهون"});
   lineChart(document.getElementById("cSmm"),ib.map(x=>pt(x.date,x.smm,`<b>${shortD(parseD(x.date))}</b><br>${x.smm} كجم${x.clean?"":"<br>مش نضيف: بعد تمرين"}`,!x.clean)),{label:"العضل"});
-  lineChart(document.getElementById("cWt"),wt.map(x=>pt(x.date,x.kg,`<b>${shortD(parseD(x.date))}</b><br>${x.kg} كجم${x.note?`<br>${esc(x.note)}`:""}`,x.source==="inbody"&&ib.some(i=>i.date===x.date&&!i.clean))),{label:"الوزن"});
+  lineChart(document.getElementById("cWt"),wt.map(x=>pt(x.date,x.kg,`<b>${shortD(parseD(x.date))}</b><br>${x.kg} كجم${x.note?`<br>${esc(x.note)}`:""}`,x.source==="inbody"&&ib.some(i=>i.date===x.date&&!i.clean))),{label:"الوزن"});};
+  const more=document.getElementById("ibMore");more.addEventListener("toggle",()=>{if(more.open)drawIb()});
 }
 
 /* ---------------- FOOD ---------------- */
@@ -319,23 +317,25 @@ function renderFood(){
   const far=[...full].sort((a,b)=>Math.abs(b.kcal-kT)-Math.abs(a.kcal-kT)).slice(0,3);
   const tile=(k,v,of,d)=>`<div class="kpi"><div class="k">${k}</div><div class="v num">${v}${of!=null?`<small> / ${of}</small>`:""}</div>${of?`<div class="meter"><i style="width:${Math.min(100,v/of*100)}%"></i></div>`:""}${d?`<div class="d">${d}</div>`:""}</div>`;
   const tipD=d=>`<b>${shortD(parseD(d.date))}${d.fasting?" • صيام":""}</b><br>${d.kcal??"—"} سعر • بروتين ${d.protein??"—"} • كارب ${d.carbs??"—"} • دهون ${d.fat??"—"}${d.partial?"<br>اليوم مقفلش":""}`;
-  root.innerHTML=head("الأكل",`الهدف ${kT.toLocaleString("en-US")} سعر • ${pT}+ بروتين`)+
+  root.innerHTML=head("الأكل","")+
   `<div class="seg" id="foodSeg">${[[14,"14 يوم"],[30,"30 يوم"],[0,"الكل"]].map(([v,l])=>`<button class="chip" data-v="${v}" aria-pressed="${foodRange===v}">${l}</button>`).join("")}</div>`+
-  `<div class="kpis">${tile("متوسط السعرات",avg!=null?avg.toLocaleString("en-US"):"—",null,avg!=null?`<span dir="ltr">${avg-kT>0?"+":""}${avg-kT}</span> عن الهدف`:"")}
-    ${tile("أيام في النطاق",inBand,full.length,"±10% من الهدف")}${tile("أيام البروتين",pHit,full.length,`${pT} جم أو أكتر`)}${tile("أيام الدهون",fHit,full.length,`حوالين ${T.fat[0]}–${T.fat[1]} جم`)}</div>`+
-  `<div class="dcard"><h2>السعرات كل يوم</h2><p class="sub">المنطقة الرمادي = ±10% من الهدف. العمود الباهت = يوم مقفلش</p><div class="chart" id="cK"></div>
+  `<div class="dcard summary"><p>متوسط أكلك <b class="num">${avg!=null?avg.toLocaleString("en-US"):"—"}</b> سعر في اليوم، والهدف ${kT.toLocaleString("en-US")}.</p>
+    <p><b class="num">${inBand}</b> يوم من ${full.length} كانوا قريبين من الهدف، والبروتين وصل في <b class="num">${pHit}</b> يوم.</p></div>`+
+  `<div class="dcard"><h2>السعرات كل يوم</h2><p class="sub">الخط المتقطع = الهدف</p><div class="chart" id="cK"></div>
     <div class="legend"><span><i></i>السعرات</span><span><i class="ref"></i>الهدف ${kT.toLocaleString("en-US")}</span><span><i class="band"></i>النطاق</span></div></div>`+
-  `<div class="dcard"><h2>البروتين كل يوم (جم)</h2><div class="chart" id="cP"></div><div class="legend"><span><i></i>البروتين</span><span><i class="ref"></i>${pT} جم</span></div></div>`+
-  `<div class="dcard"><h2>الدهون كل يوم (جم)</h2><div class="chart" id="cF"></div><div class="legend"><span><i></i>الدهون</span><span><i class="ref"></i>${fT} جم</span></div></div>`+
-  `<div class="dcard"><h2>أبعد أيام عن الهدف</h2><ul class="list">${far.map(d=>`<li><span>${shortD(parseD(d.date))}${d.fasting?" • صيام":""}<small style="display:block;color:var(--muted);font-size:12px">بروتين ${d.protein} • دهون ${d.fat}</small></span><span class="num">${d.kcal.toLocaleString("en-US")}</span></li>`).join("")}</ul>
+  `<details class="more" id="foodMore"><summary>تفاصيل أكتر</summary>
+    <h3 class="sh">البروتين كل يوم (جم)</h3><div class="chart" id="cP"></div><div class="legend"><span><i class="ref"></i>${pT} جم</span></div>
+    <h3 class="sh">الدهون كل يوم (جم)</h3><div class="chart" id="cF"></div><div class="legend"><span><i class="ref"></i>${fT} جم</span></div>
+    <h3 class="sh">أبعد أيام عن الهدف</h3><ul class="list">${far.map(d=>`<li><span>${shortD(parseD(d.date))}${d.fasting?" • صيام":""}<small style="display:block;color:var(--muted);font-size:12px">بروتين ${d.protein} • دهون ${d.fat}</small></span><span class="num">${d.kcal.toLocaleString("en-US")}</span></li>`).join("")}</ul>
     <details class="tbl"><summary>كل الأيام</summary><table class="dt"><tr><th>اليوم</th><th>سعرات</th><th>بروتين</th><th>كارب</th><th>دهون</th></tr>
     ${days.slice().reverse().map(d=>`<tr><td>${shortD(parseD(d.date))}${d.fasting?" ص":""}${d.partial?" *":""}</td><td class="n">${d.kcal??"—"}</td><td class="n">${d.protein??"—"}</td><td class="n">${d.carbs??"—"}</td><td class="n">${d.fat??"—"}</td></tr>`).join("")}</table>
-    <p class="sub">ص = صيام • * = اليوم مقفلش</p></details></div>`;
+    <p class="sub">ص = صيام • * = اليوم مقفلش</p></details></details>`;
   root.querySelectorAll("#foodSeg .chip").forEach(b=>b.onclick=()=>{foodRange=+b.dataset.v;renderFood()});
   const withK=days.filter(d=>d.kcal!=null);
   barChart(document.getElementById("cK"),withK.map(d=>({t:parseD(d.date),y:d.kcal,dim:d.partial,tip:tipD(d)})),{ref:kT,band,label:"السعرات"});
+  const fm=document.getElementById("foodMore");fm.addEventListener("toggle",()=>{if(!fm.open)return;
   barChart(document.getElementById("cP"),withK.filter(d=>d.protein!=null).map(d=>({t:parseD(d.date),y:d.protein,dim:d.partial,tip:tipD(d)})),{ref:pT,label:"البروتين"});
-  barChart(document.getElementById("cF"),withK.filter(d=>d.fat!=null).map(d=>({t:parseD(d.date),y:d.fat,dim:d.partial,tip:tipD(d)})),{ref:fT,label:"الدهون"});
+  barChart(document.getElementById("cF"),withK.filter(d=>d.fat!=null).map(d=>({t:parseD(d.date),y:d.fat,dim:d.partial,tip:tipD(d)})),{ref:fT,label:"الدهون"});});
 }
 
 /* ---------------- wiring ---------------- */

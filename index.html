@@ -247,6 +247,34 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
 .matrix th,.matrix td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
 .matrix th{color:var(--muted);font-weight:600}
 .flag{font-size:12px;color:var(--late);font-weight:600}
+
+/* simplified session */
+#exMeta,#dots{display:none!important}
+#workCard h2{font-size:28px;margin:0}
+#workCard .step{font-size:18px;font-weight:700;color:var(--ink);margin:2px 0 10px}
+#workCard .last{margin-top:14px;background:none;padding:0;color:var(--muted)}
+#workCard .hint{font-size:14px}
+#note:empty{display:none}
+.linkbtn{display:block;margin:14px auto 0;background:none;padding:6px;font-size:14px;font-weight:600;color:var(--muted);text-decoration:underline}
+details.more{margin-top:16px;background:var(--surface);border-radius:18px;padding:4px 16px 14px}
+details.more summary{cursor:pointer;font-weight:700;padding:12px 0;font-size:16px}
+details.more .plan,details.more ol{margin:0;padding:0;list-style:none}
+details.more li button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:right;padding:11px 2px;background:none;border-radius:0;border-bottom:1px solid var(--line);font-size:15px}
+details.more li.done button{color:var(--muted)}
+details.more li.cur button{font-weight:700}
+.status{font-size:14px}
+
+.weekline{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:15px;color:var(--muted)}
+.weekline b{color:var(--ink);font-size:17px;width:100%}
+.weekline .num{color:var(--ink);font-weight:700;font-size:17px}
+.day.isnext{border:2px solid var(--plate)}
+.day.isnext .go{background:var(--plate);color:#fff;padding:6px 14px;border-radius:999px}
+
+.summary p{margin:0 0 8px;font-size:17px;line-height:1.6}
+.summary p:last-child{margin:0}
+.summary .num{font-size:19px}
+.sh{font-size:15px;margin:14px 0 4px}
+details.more .chart{margin-top:4px}
 </style>
 </head>
 <body>
@@ -294,28 +322,28 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
   <div class="status" id="status"></div>
 
   <div class="card" id="workCard">
-    <div class="step" id="step"></div>
     <h2><span id="exName"></span><span class="unit" id="exUnit"></span></h2>
+    <div class="step" id="step"></div>
     <div class="goal" id="exGoal"></div>
     <div class="meta" id="exMeta"></div>
-    <div class="last" id="exLast"></div>
-    <div class="hint" id="exHint"></div>
     <div class="dots" id="dots"></div>
     <div id="setForm">
       <div class="inputs" id="grid">
         <div><label for="w" id="wLbl">الوزن</label><input id="w" type="text" inputmode="decimal" autocomplete="off"></div>
         <div><label for="r" id="rLbl">العدات</label><input id="r" type="text" inputmode="numeric" autocomplete="off"></div>
-        <div id="rirBox" class="hidden"><label for="rir">RIR</label>
+        <div id="rirBox" class="hidden"><label for="rir">فاضل كام عدة؟</label>
           <select id="rir"><option value="">—</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4+</option></select></div>
       </div>
     </div>
-    <div class="muted" id="note" style="margin-top:12px"></div>
+    <div class="flag" id="note"></div>
     <button class="primary" id="mainBtn"></button>
+    <div class="last" id="exLast"></div>
+    <div class="hint" id="exHint"></div>
     <div class="row">
-      <button class="ghost" id="undoBtn">امسح آخر ست</button>
       <button class="ghost" id="skipBtn">التمرين الجاي</button>
     </div>
     <div class="toggles hidden" id="skipReasons" style="align-items:center"></div>
+    <button class="linkbtn" id="undoBtn">امسح آخر ست</button>
   </div>
 
   <div class="timer hidden" id="timerBox">
@@ -330,12 +358,12 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
     </div>
   </div>
 
-  <div class="plan">
-    <h3>تمارين النهارده (اضغط على أي تمرين لو الجهاز مشغول)</h3>
+  <details class="more">
+    <summary id="planSum">كل تمارين النهارده</summary>
     <ol id="planList"></ol>
-  </div>
-  <button class="finish" id="finishBtn">إنهاء التمرينة</button>
-  <button class="ghost" id="restartBtn" style="width:100%;margin-top:10px">الغي التمرينة وابدأ من الأول</button>
+    <button class="finish" id="finishBtn">إنهاء التمرينة</button>
+    <button class="linkbtn" id="restartBtn">الغي التمرينة وابدأ من الأول</button>
+  </details>
 </section>
 
 <!-- SUMMARY -->

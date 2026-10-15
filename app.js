@@ -69,9 +69,9 @@ function lastFor(exId){const H=histAll();for(let i=H.length-1;i>=0;i--){const it
 function hintFor(ex){
   const L=lastFor(ex.id);if(!L||ex.seconds)return null;
   const logs=L.it.logs,full=logs.length>=ex.sets&&logs.every(x=>+x.r>=ex.hi);
-  if(full)return{t:"المرة اللي فاتت وصلت أعلى الرينج في كل الستات: زوّد الوزن خطوة.",c:""};
-  if(logs.some(x=>+x.r<ex.lo))return{t:"المرة اللي فاتت فيه ستات تحت الرينج: خليك على نفس الوزن.",c:"warn"};
-  return{t:"نفس الوزن، وحاول تزوّد عدة.",c:""};
+  if(full)return{t:"زوّد الوزن خطوة",c:""};
+  if(logs.some(x=>+x.r<ex.lo))return{t:"خليك على نفس الوزن",c:"warn"};
+  return{t:"نفس الوزن وزوّد عدة",c:""};
 }
 
 /* ---------- HOME ---------- */
@@ -92,16 +92,10 @@ function renderHome(){
   $("resumeBtn").classList.toggle("hidden",!D.active);
   const H=histAll(),ws=weekStart(),wk=H.filter(h=>h.startedAt>=ws);
   const nCardio=wk.filter(h=>h.items.some(x=>x.timed&&x.id==="cardio"&&x.done)).length,nAbs=wk.filter(h=>h.items.some(x=>x.abs&&x.logs&&x.logs.length)).length;
-  $("weekHero").innerHTML=`<div class="hero"><div class="hero-top"><h2>الأسبوع ده</h2><span class="cnt num">${wk.length}<small> / 6</small></span></div>
-    ${barbell(Math.min(6,wk.length))}<div class="tally"><span>كارديو${dots(Math.min(4,nCardio),4)}</span><span>بطن${dots(Math.min(3,nAbs),3)}</span></div></div>`;
+  $("weekHero").innerHTML=`<div class="weekline"><b>الأسبوع ده</b><span><span class="num">${wk.length}</span> من 6 تمرينات</span><span>كارديو <span class="num">${nCardio}</span> من 4</span><span>بطن <span class="num">${nAbs}</span> من 3</span></div>`;
   const last=H[H.length-1],nextDay=last?ROTATION[(ROTATION.indexOf(last.day)+1)%3]:"legs";
-  const card=(k,next)=>{const lastK=[...H].reverse().find(h=>h.day===k),n=H.filter(h=>h.day===k).length;
-    const meta=`${DAYS[k].d}${lastK?` • آخر مرة ${new Date(lastK.startedAt).toLocaleDateString("ar-EG",{weekday:"long"})}`:""}`;
-    if(!next)return `<button class="day mini" data-day="${k}"><div><b>${DAYS[k].t}</b><span>${meta}</span></div><span class="go">ابدأ</span></button>`;
-    const prev=(D.plans[k]||[]).filter(x=>!x.optional).slice(0,3);
-    return `<button class="day next" data-day="${k}"><span class="lbl">الجاي في الدور${n?` • المرة رقم ${n+1}`:""}</span><b>${DAYS[k].t}</b><span>${meta}</span>
-      <ul>${prev.map(x=>`<li><span>${esc(x.name)}</span><em>${esc(x.target||"")}</em></li>`).join("")}</ul><span class="go">ابدأ ${DAYS[k].t}</span></button>`};
-  $("days").innerHTML=card(nextDay,true)+ROTATION.filter(k=>k!==nextDay).map(k=>card(k,false)).join("");
+  $("days").innerHTML=ROTATION.map(k=>{const lastK=[...H].reverse().find(h=>h.day===k);
+    return `<button class="day${k===nextDay?" isnext":""}" data-day="${k}"><div><b>${DAYS[k].t}</b><span>${DAYS[k].d}${lastK?` • آخر مرة ${new Date(lastK.startedAt).toLocaleDateString("ar-EG",{weekday:"long"})}`:""}</span></div><span class="go">${k===nextDay?"الجاي":"ابدأ"}</span></button>`}).join("");
   $("days").querySelectorAll(".day").forEach(b=>b.onclick=()=>openSetup(b.dataset.day,b));
   $("days").classList.remove("hidden");$("setup").classList.add("hidden");
   const HL=[...D.history].reverse().slice(0,8);
@@ -142,7 +136,7 @@ function renderSession(){
   const resting=S.phase==="rest"||S.phase==="timed";
   $("workCard").classList.toggle("hidden",resting);$("timerBox").classList.toggle("hidden",!resting);
 
-  $("step").textContent=`${S.i+1} من ${S.items.length}${it.optional?" • اختياري":""}`;
+  $("planSum").textContent=`كل تمارين النهارده (${S.items.filter(isDone).length} من ${S.items.length})`;
   $("exName").textContent=it.name;
   $("exUnit").textContent=it.timed?(it.id==="warmup"?"قبل الحديد":"كارديو"):it.unit||"";
   if(it.timed){
@@ -150,7 +144,7 @@ function renderSession(){
     $("exGoal").classList.add("hidden");
     $("exLast").classList.add("hidden");$("exHint").classList.add("hidden");$("dots").classList.add("hidden");$("setForm").classList.add("hidden");
     $("undoBtn").classList.add("hidden");
-    $("note").textContent=it.done?"اتعملت ✅":"";
+    $("step").textContent=it.done?"اتعملت ✅":`${it.minutes} دقيقة${it.note?` • ${it.note}`:""}`;$("note").textContent="";
     $("mainBtn").textContent=it.done?"التمرين الجاي":`ابدأ ${it.minutes} دقيقة`;
   }else{
     const s=it.logs.length;
@@ -159,11 +153,11 @@ function renderSession(){
     $("exGoal").innerHTML=`<small>الهدف النهارده</small>${esc(it.target)}`;
     const L=lastFor(it.id);
     $("exLast").classList.toggle("hidden",!L);
-    if(L)$("exLast").innerHTML=`المرة اللي فاتت: <b class="num">${esc(setsTxt(L.it.logs,it))}</b>${L.it.rir?` (RIR ${esc(L.it.rir)})`:""}`;
-    const h=hintFor(it);const leftTxt=it.left?"ابدأ بالشمال، واليمين نفس العدات.":"";
+    if(L)$("exLast").innerHTML=`المرة اللي فاتت: <span class="num">${esc(setsTxt(L.it.logs,it))}</span>`;
+    const h=hintFor(it);const leftTxt=it.left?"ابدأ بالشمال":"";
     $("exHint").className="hint"+(h&&h.c?" "+h.c:"");
     $("exHint").classList.toggle("hidden",!h&&!leftTxt);
-    $("exHint").textContent=[h&&h.t,leftTxt].filter(Boolean).join(" ");
+    $("exHint").textContent=[h&&h.t,leftTxt].filter(Boolean).join(" • ");
     $("dots").classList.remove("hidden");
     $("dots").innerHTML=Array.from({length:Math.max(it.sets,s)},(_,k)=>`<span class="dot ${k<s?"done":k===s?"cur":""}"></span>`).join("");
     const done=s>=it.sets;
@@ -171,12 +165,12 @@ function renderSession(){
     const lastSet=s>=it.sets-1;
     $("rirBox").classList.toggle("hidden",!lastSet);$("grid").classList.toggle("three",lastSet);
     $("rLbl").textContent=it.seconds?"الثواني":"العدات";
-    $("wLbl").textContent=it.unit==="كل ناحية"?"الوزن (ناحية)":"الوزن";
+    $("wLbl").textContent=it.unit==="كل ناحية"?"الوزن (ناحية واحدة)":it.unit&&it.unit!=="كجم"&&it.unit!=="وزن جسم"?`الوزن (${it.unit})`:"الوزن";
     $("w").placeholder=it.unit==="وزن جسم"?"اختياري":"";
     const prevW=s?it.logs[s-1].w:(L&&L.it.logs[0]?L.it.logs[0].w:"");
     $("w").value=prevW;$("r").value="";$("rir").value="";
     $("undoBtn").classList.toggle("hidden",!s);
-    $("note").textContent=done?"خلصت الستات المطلوبة. لو عايز ست زيادة، سجّله.":`ست ${s+1} من ${it.sets}`;
+    $("step").textContent=done?"خلصت الستات ✅":`ست ${s+1} من ${it.sets}${it.optional?" • اختياري":""}`;$("note").textContent="";
     $("mainBtn").textContent=`خلصت الست ${s+1}`;
   }
   // timer labels
@@ -230,8 +224,8 @@ function tick(){
   const el=(Date.now()-S.startedAt)/1000;$("elapsed").textContent=fmt(el,true);
   const left=S.budget-el/60,st=$("status");
   const remaining=S.items.filter(x=>!isDone(x)).length;
-  if(left<0){st.className="status late";st.textContent=`عدّيت الوقت بـ ${Math.ceil(-left)} دقيقة. فاضل ${remaining} تمرين.`}
-  else{st.className="status ok";st.textContent=`فاضل ${Math.floor(left)} دقيقة • ${remaining} تمرين • خروج ${clock(S.startedAt+S.budget*60000)}`}
+  if(left<0){st.className="status late";st.textContent=`عدّيت وقتك بـ ${Math.ceil(-left)} دقيقة`}
+  else{st.className="status ok";st.textContent=`فاضل ${Math.floor(left)} دقيقة • ${remaining} تمرين`}
   if(S.phase==="rest"||S.phase==="timed"){
     const l=(S.endsAt-Date.now())/1000;$("digits").textContent=fmt(Math.max(0,l));
     const C=2*Math.PI*52,p=$("prog");p.style.strokeDasharray=C;p.style.strokeDashoffset=C*(1-Math.max(0,l)/S.dur);
@@ -353,7 +347,7 @@ $("restartBtn").onclick=()=>{const S=A();if(!S)return;
 ["w","r"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();id==="w"?$("r").focus():doneSet()}}));
 
 if(D.active){show("session");renderSession();wake()}else{show("home");renderHome()}
-const BUILD="2026-10-15e";
+const BUILD="2026-10-15f";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
   // a new version takes over → reload once so the new files show right away
   let reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloaded||D.active)return;reloaded=true;location.reload()});
