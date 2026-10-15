@@ -58,9 +58,14 @@ async function unlockWith(pass){
 /* ---------------- sessions ---------------- */
 function allSessions(){
   const phone=(typeof D!=="undefined"?D.history:[]).map(h=>({...h,source:h.source||"phone"}));
-  const seen=new Set(phone.map(h=>h.day+"|"+dkey(h.startedAt)));
-  const coach=(COACH&&COACH.workouts||[]).filter(h=>!seen.has(h.day+"|"+dkey(h.startedAt)));
-  return [...coach,...phone].sort((a,b)=>a.startedAt-b.startedAt);
+  const C=(COACH&&COACH.workouts||[]),key=h=>h.day+"|"+dkey(h.startedAt),cm=new Map(C.map(h=>[key(h),h]));
+  // same workout in both: the phone wins, but anything left empty on the phone (e.g. abs written only in the chat) is filled from the coach copy
+  const merged=phone.map(h=>{const c=cm.get(key(h));if(!c)return h;
+    const items=h.items.map(x=>{const y=c.items.find(z=>z.id===x.id);if(!y)return x;
+      if(x.timed)return x.done?x:{...x,done:y.done||x.done};return(x.logs&&x.logs.length)||!(y.logs&&y.logs.length)?x:{...x,logs:y.logs,skip:""}});
+    c.items.forEach(y=>{if(!items.some(x=>x.id===y.id))items.push(y)});return{...h,items}});
+  const seen=new Set(phone.map(key));
+  return [...C.filter(h=>!seen.has(key(h))),...merged].sort((a,b)=>a.startedAt-b.startedAt);
 }
 window.GTT_allSessions=allSessions;
 
@@ -269,14 +274,14 @@ function weekReport(){
     const before=e.cur.filter(p=>p.t<ws);if(!before.length)return;
     const best=Math.max(...inWk.map(p=>p.v)),prevMax=Math.max(...before.map(p=>p.v)),last=before[before.length-1].v;
     if(best>prevMax*1.001)prs.push(e.name);
-    const ch=(best/last-1)*100;(ch>0.5?ups:flat).push(`${e.name} (${pct(ch)})`)});
+    const ch=(best/last-1)*100;(ch>0.5?ups:flat).push(`${e.name} ${pct(ch)}${best>prevMax*1.001?" 🎉":""}`)});
   const skips=[];wk.forEach(h=>h.items.forEach(x=>{if((x.timed?!x.done:!(x.logs&&x.logs.length))&&!x.optional&&x.id!=="warmup")skips.push(`${x.name}${x.skip?` (${x.skip})`:""}`)}));
   const durs=wk.map(sessDur).filter(v=>v!=null);
   const PB=(typeof D!=="undefined"&&D.body)||{},wa=[...((COACH&&COACH.waist)||[]),...(PB.waist||[])].sort((a,b)=>a.date<b.date?-1:1);
   const lines=[`تقرير الأسبوع (من ${shortD(ws)})`,`تمرينات: ${wk.length} من 6 • كارديو: ${card} من 4 • بطن: ${ab} من 3`];
   if(durs.length)lines.push(`متوسط مدة التمرينة: ${hm(Math.round(durs.reduce((a,b)=>a+b,0)/durs.length))}`);
   if(wa.length)lines.push(`آخر قياس وسط: ${wa[wa.length-1].cm} سم (${shortD(parseD(wa[wa.length-1].date))})`);
-  lines.push("",`أرقام جديدة: ${prs.length?prs.join("، "):"مفيش"}`,`اتحسن: ${ups.length?ups.join("، "):"مفيش"}`,`ثابت أو نزل: ${flat.length?flat.join("، "):"مفيش"}`);
+  lines.push("",`اتحسن (${ups.length}): ${ups.length?ups.join("، "):"مفيش"}`,`ثابت أو نزل (${flat.length}): ${flat.length?flat.join("، "):"مفيش"}`);
   if(skips.length)lines.push(`اتشال: ${skips.join("، ")}`);
   wk.forEach(h=>{lines.push("",`${({push:"Push",pull:"Pull",legs:"Legs"})[h.day]} • ${shortD(h.startedAt)}`);
     h.items.forEach(x=>{if(x.timed){lines.push(`- ${x.name}: ${x.done?"✅":"❌"}`);return}if(x.logs&&x.logs.length)lines.push(`- ${x.name}: ${setsTxt(x.logs,x)}${x.rir?` (RIR ${x.rir})`:""}`)})});
