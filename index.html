@@ -285,6 +285,12 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
 .entry{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:8px}
 .entry input{width:100%;padding:11px 10px;border-radius:12px;border:0;background:var(--card2);font-size:17px;text-align:center}
 .syncok{color:var(--ok);font-weight:600}.syncbad{color:var(--warn);font-weight:600}
+
+#tabs.seg .chip{flex:1;background:none;border-radius:8px;padding:8px 2px;color:var(--muted);font-size:13px}
+#tabs.seg .chip[aria-pressed="true"]{background:#636366;color:#fff}
+#plansList{padding:0 16px}
+.exhead .nm{cursor:pointer}
+.exs.open{padding-bottom:16px}
 </style>
 </head>
 <body>
@@ -333,10 +339,10 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
 <section id="body" class="hidden"></section>
 <section id="food" class="hidden"></section>
 
-<!-- SETTINGS -->
-<section id="settings" class="hidden">
-  <div class="lt"><h1>الإعدادات</h1><button class="pill gray" id="backHome" style="padding:8px 18px;font-size:15px">تم</button></div>
-  <div class="tabs" id="tabs"></div>
+<!-- EXERCISES (from settings) -->
+<section id="plans" class="hidden">
+  <div class="lt"><div><button class="lnk" id="plansBack" style="padding:0 0 4px">‹ الإعدادات</button><h1>التمارين</h1></div></div>
+  <div class="seg" id="tabs"></div>
   <div id="cardioEdit" class="hidden card">
     <div class="edit">
       <div><label for="cMin">المدة بالدقايق</label><input id="cMin" type="number" inputmode="numeric"></div>
@@ -345,12 +351,20 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
   </div>
   <div id="plansList" class="card"></div>
   <button class="pill gray block" id="addEx" style="margin-top:12px">+ ضيف تمرين</button>
+  <button class="lnk dim" id="resetPlans" style="display:block;margin:14px auto 0">رجّع التمارين والأهداف للأصل</button>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="hidden">
+  <div class="lt"><h1>الإعدادات</h1><button class="pill gray" id="backHome" style="padding:8px 18px;font-size:15px">تم</button></div>
+  <div class="grouped">
+    <button id="toPlans"><span><span class="t">التمارين والأهداف</span><span class="s">Push • Pull • Legs • البطن • المشاية</span></span><span class="chev">‹</span></button>
+  </div>
   <h2 class="sect-t">نسخة احتياطية</h2>
   <div class="card">
     <p class="muted" style="margin-top:0">التمرينات المسجلة محفوظة على الموبايل ده. انسخ النسخة واحتفظ بيها، أو الصق نسخة قديمة واسترجعها.</p>
     <textarea id="backup" style="min-height:90px;direction:ltr;font-size:13px;background:var(--card2)"></textarea>
     <div class="row"><button class="pill gray" id="exportBtn">انسخ النسخة</button><button class="pill gray" id="importBtn">استرجع</button></div>
-    <div class="row"><button class="pill gray" id="resetPlans">رجّع التمارين للأصل</button></div>
   </div>
   <h2 class="sect-t">البرنامج</h2>
   <div class="card"><label for="progStart">بداية البرنامج (أسبوع 1)</label><input id="progStart" type="date" class="fld">

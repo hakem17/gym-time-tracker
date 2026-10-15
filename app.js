@@ -1,7 +1,7 @@
 const DAYS={push:{t:"Push",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",d:"رجل وسمانة",ex:{absA:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-16c";
+const BUILD="2026-10-16d";
 
 /* ---------- storage ---------- */
 let D=load();
@@ -40,7 +40,7 @@ const clock=t=>new Date(t).toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-
 const dateLbl=t=>new Date(t).toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long"});
 const setsTxt=(sets,ex)=>sets.map(x=>x.w?`${x.w}×${x.r}`:`${x.r}${ex&&ex.seconds?" ث":""}`).join("، ");
 const TAB_VIEWS=["home","progress","body","food"];
-function show(id){["home","session","summary","settings","progress","body","food"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
+function show(id){["home","session","summary","settings","plans","progress","body","food"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
   $("nav").classList.toggle("hidden",!TAB_VIEWS.includes(id));
   document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.v===id?"page":"false"));
   if(id!=="session")$("rest").classList.add("hidden");
@@ -354,8 +354,8 @@ function renderSettings(){
   const isC=tab==="cardio";$("cardioEdit").classList.toggle("hidden",!isC);$("plansList").classList.toggle("hidden",isC);$("addEx").classList.toggle("hidden",isC);
   if(isC){$("cMin").value=D.plans.cardio.minutes;$("cNote").value=D.plans.cardio.note;return}
   const list=D.plans[tab];
-  $("plansList").innerHTML=list.map((x,k)=>`<div class="exs">
-    <div class="exhead"><div class="nm">${esc(x.name)}<span class="sm">${x.sets} × ${x.lo}–${x.hi}${x.seconds?" ث":""} • راحة ${fmt(x.rest)} • ${esc(x.unit)}${x.optional?" • اختياري":""}</span></div>
+  $("plansList").innerHTML=list.map((x,k)=>`<div class="exs${openEx===k?" open":""}">
+    <div class="exhead"><div class="nm" data-a="edit" data-k="${k}" role="button" tabindex="0">${esc(x.name)}<span class="sm">${x.sets} × ${x.lo}–${x.hi}${x.seconds?" ث":""} • راحة ${fmt(x.rest)} • ${esc(x.unit)}${x.optional?" • اختياري":""}</span></div>
       <button class="mini" data-a="up" data-k="${k}" aria-label="لفوق">↑</button><button class="mini" data-a="down" data-k="${k}" aria-label="لتحت">↓</button>
       <button class="mini" data-a="edit" data-k="${k}">${openEx===k?"تم":"تعديل"}</button></div>
     ${openEx===k?`<div class="edit">
@@ -372,7 +372,7 @@ function renderSettings(){
       <button class="pill gray full" data-a="base" data-k="${k}">جهاز جديد: ابدأ المقارنة من النهارده</button>
       <button class="pill gray full" data-a="del" data-k="${k}" style="color:var(--move)">شيل التمرين</button>
     </div>`:""}</div>`).join("");
-  $("plansList").querySelectorAll("button[data-a]").forEach(b=>b.onclick=()=>{const k=+b.dataset.k,a=b.dataset.a;
+  $("plansList").querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const k=+b.dataset.k,a=b.dataset.a;
     if(a==="del"){if(!armed(b,"اضغط تاني عشان تشيله"))return;list.splice(k,1);openEx=null}
     if(a==="base"){if(!armed(b,"اضغط تاني: الشارت هيبدأ خط جديد"))return;const t=new Date(),ds=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;(list[k].baselines=list[k].baselines||[]).push(ds);refreshDash()}
     if(a==="edit")openEx=openEx===k?null:k;
@@ -391,7 +391,9 @@ $("importBtn").onclick=()=>{try{const v=JSON.parse($("backup").value);if(!v.plan
 $("resetPlans").onclick=()=>{if(!armed($("resetPlans"),"اضغط تاني للتأكيد"))return;D.plans=JSON.parse(JSON.stringify(DEFAULTS));save();renderSettings()};
 
 /* ---------- wiring ---------- */
-$("toSettings").onclick=()=>{show("settings");renderSettings()};
+$("toSettings").onclick=()=>show("settings");
+$("toPlans").onclick=()=>{openEx=null;show("plans");renderSettings()};
+$("plansBack").onclick=()=>show("settings");
 $("backHome").onclick=()=>{show("home");renderHome()};
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{show(b.dataset.v);if(b.dataset.v==="home")renderHome()});
 $("resumeBtn").onclick=()=>{wake();show("session");renderSession()};
