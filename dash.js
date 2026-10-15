@@ -202,7 +202,7 @@ function lockCard(why){
   if(coachState==="loading")return`<div class="dcard"><p class="empty">بفتح الداتا…</p></div>`;
   return`<div class="dcard lockcard"><h2>افتح داتا الكوتش</h2><p class="sub">${why} الداتا متشفرة. اكتب الباسورد مرة واحدة على الموبايل ده.</p>
     <input id="passIn" type="password" autocomplete="current-password" placeholder="الباسورد" aria-label="الباسورد">
-    <button class="primary" id="passBtn">افتح</button>${coachErr?`<p class="flag">${coachErr}</p>`:""}</div>`;
+    <button class="pill move block" id="passBtn" style="margin-top:10px">افتح</button>${coachErr?`<p class="flag">${coachErr}</p>`:""}</div>`;
 }
 function wireLock(root){const b=root.querySelector("#passBtn");if(!b)return;const i=root.querySelector("#passIn");
   const go=()=>{if(i.value.trim())unlockWith(i.value.trim())};b.onclick=go;i.addEventListener("keydown",e=>{if(e.key==="Enter")go()})}
