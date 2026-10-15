@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
+  --series:#2a78d6;
   --bg:#E4E7E9;--surface:#F5F6F7;--ink:#1A2228;--muted:#5E6B74;--line:#C9CED2;
   --plate:#C3172E;--plate-soft:#F6DDE0;--ok:#2E7A57;--late:#B4561A;
   box-sizing:border-box;
@@ -25,12 +26,12 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#1C2328;--surface:#252E34;--ink:#E8ECEE;--muted:#9AA6AE;--line:#36424A;
-    --plate:#E5384D;--plate-soft:#3A2329;--ok:#4FB389;--late:#E08A4E;
+    --plate:#E5384D;--plate-soft:#3A2329;--ok:#4FB389;--late:#E08A4E;--series:#3987e5;
   }
 }
 :root[data-theme="dark"]{
   --bg:#1C2328;--surface:#252E34;--ink:#E8ECEE;--muted:#9AA6AE;--line:#36424A;
-  --plate:#E5384D;--plate-soft:#3A2329;--ok:#4FB389;--late:#E08A4E;
+  --plate:#E5384D;--plate-soft:#3A2329;--ok:#4FB389;--late:#E08A4E;--series:#3987e5;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -144,6 +145,82 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
 .check input{width:20px;height:20px}
 .sect{margin-top:28px}
 .sect h3{font-size:17px;margin-bottom:6px}
+
+/* tab bar */
+.wrap{padding-bottom:96px}
+.tabbar{position:fixed;inset:auto 0 0 0;display:flex;justify-content:space-around;background:var(--surface);border-top:1.5px solid var(--line);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:20}
+.tabbar button{flex:1;max-width:120px;background:none;padding:6px 2px;font-size:13px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:12px}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--plate)}
+/* session edit */
+.edEx{padding:12px 0;border-bottom:1px solid var(--line)}
+.edHead{font-weight:700;margin-bottom:6px}
+.edRow{display:flex;align-items:center;gap:6px;margin-top:6px}
+.edRow input{max-width:86px;text-align:center;padding:8px}
+.edRow select{max-width:110px;padding:8px}
+/* dashboard */
+.dhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:2px solid var(--line)}
+.dhead h1{font-size:24px}
+.seg{display:flex;gap:6px;margin:14px 0 4px;overflow-x:auto}
+.seg .chip{white-space:nowrap}
+.dcard{margin-top:14px;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:16px}
+.dcard h2{font-size:18px;margin-bottom:2px}
+.dcard .sub{font-size:13px;color:var(--muted);margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.kpi{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
+.kpi .k{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:700;line-height:1.15}
+.kpi .v small{font-size:15px;font-weight:600;color:var(--muted)}
+.kpi .d{font-size:13px;font-weight:600;color:var(--muted)}
+.meter{height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--ink)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.callout{border-radius:14px;padding:12px;background:var(--bg)}
+.callout .k{font-size:13px;color:var(--muted);font-weight:600}
+.callout b{display:block;font-size:17px;margin:2px 0}
+.callout .num{font-weight:700}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+.list li:last-child{border-bottom:0}
+.list .num{font-weight:700}
+.exrow{display:grid;grid-template-columns:1fr 92px 64px;align-items:center;gap:8px;width:100%;background:none;text-align:right;padding:10px 0;border-bottom:1px solid var(--line);border-radius:0;font-size:15px}
+.exrow:last-child{border-bottom:0}
+.exrow small{display:block;color:var(--muted);font-size:12px}
+.exrow .chg{font-weight:700;text-align:left;direction:ltr}
+.exrow svg{width:92px;height:28px}
+.lvl{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;border:1.5px solid var(--line);white-space:nowrap}
+.lvl.strong{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lvl.weak{border-style:dashed}
+.lvl.na{color:var(--muted)}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart .ax{font-size:11px;fill:var(--muted);font-family:inherit}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .ref{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 4}
+.chart .band{fill:var(--ink);opacity:.06}
+.chart .ln{fill:none;stroke:var(--series);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .pt{fill:var(--series);stroke:var(--surface);stroke-width:2}
+.chart .pt.hollow{fill:var(--surface);stroke:var(--series)}
+.chart .bar{fill:var(--series)}
+.chart .bar.dim{opacity:.45}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart .cross{stroke:var(--muted);stroke-width:1}
+.tip{position:fixed;z-index:30;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;line-height:1.4;padding:8px 10px;border-radius:10px;max-width:240px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--series);vertical-align:middle;margin-inline-end:6px}
+.legend i.ref{background:none;border-top:2px dashed var(--muted);height:0}
+.legend i.band{height:10px;background:var(--ink);opacity:.12}
+.empty{color:var(--muted);font-size:15px;padding:8px 0}
+.lockcard input{margin-top:8px;direction:ltr;text-align:center}
+details.tbl summary{cursor:pointer;color:var(--muted);font-size:14px;font-weight:600;margin-top:10px}
+table.dt{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+table.dt th,table.dt td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
+table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+.matrix{width:100%;border-collapse:collapse;font-size:13px}
+.matrix th,.matrix td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
+.matrix th{color:var(--muted);font-weight:600}
+.flag{font-size:12px;color:var(--late);font-weight:600}
 </style>
 </head>
 <body>
@@ -176,6 +253,11 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
   </div>
 </section>
 
+<!-- PROGRESS / BODY / FOOD (filled by dash.js) -->
+<section id="progress" class="hidden"></section>
+<section id="body" class="hidden"></section>
+<section id="food" class="hidden"></section>
+
 <!-- SESSION -->
 <section id="session" class="hidden">
   <div class="sbar">
@@ -206,6 +288,7 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
       <button class="ghost" id="undoBtn">امسح آخر ست</button>
       <button class="ghost" id="skipBtn">التمرين الجاي</button>
     </div>
+    <div class="toggles hidden" id="skipReasons" style="align-items:center"></div>
   </div>
 
   <div class="timer hidden" id="timerBox">
@@ -235,6 +318,8 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
   <textarea id="sumText" readonly></textarea>
   <button class="primary" id="shareBtn">ابعت الملخص</button>
   <div class="row"><button class="ghost" id="copyBtn">نسخ</button><button class="ghost" id="homeBtn">الرئيسية</button></div>
+  <div class="row"><button class="ghost" id="editBtn">عدّل الأرقام</button></div>
+  <div id="editBox" class="hidden"></div>
   <div class="row"><button class="ghost" id="delSumBtn" style="color:var(--plate);border-color:var(--plate)">امسح التمرينة دي من السجل</button></div>
 </section>
 
@@ -264,341 +349,16 @@ textarea{width:100%;min-height:280px;font-size:15px;padding:12px;border-radius:1
 </section>
 
 </div>
-<script>
-/* ---------- default plan ---------- */
-const E=(id,name,sets,lo,hi,rest,unit,target,o={})=>({id,name,sets,lo,hi,rest,unit,target,...o});
-const DEFAULTS={
-  push:[
-    E("pu1","شيست بريس جهاز (إنكلاين)",4,6,10,120,"كل ناحية","45 × 10 في أول 3، ولو الرابع هينزل تحت 6 متلعبوش"),
-    E("pu2","دامبل شيست بريس",3,8,12,120,"كجم","30 × 7–8، ولو نزلت تحت 6 ارجع 25 × 12"),
-    E("pu3","فراشة كابل",3,10,15,90,"كجم","10 × 12–13"),
-    E("pu4","فلات شيست بريس (جهاز Lying)",3,8,10,120,"كل ناحية","30 × 10 في الـ 3 ستات"),
-    E("pu5","كتف دمبل أمامي",3,6,10,120,"كجم","20 × 9 في الـ 3 ستات، من غير مساعدة"),
-    E("pu6","رفرفة جانبي كابل",3,10,15,90,"كجم","5 × 15 في الـ 3 ستات"),
-    E("pu7","أوفر هيد كابل تراي",3,8,12,90,"كجم","22.5 × 10–12"),
-    E("pu8","تراي الكف لتحت",3,8,12,90,"كجم","27.5 × 9–10"),
-    E("pu9","تراي الكف فوق",3,10,15,60,"كجم","20 × 13+ في الـ 3 ستات"),
-  ],
-  pull:[
-    E("pl1","سحب عالي",3,8,12,120,"بلطات","180 × 9 في الـ 3 ستات، عدات كاملة"),
-    E("pl2","Single-Arm Cable Row",3,10,12,90,"كجم","خطوة أتقل من 20 × 10–12",{left:true}),
-    E("pl3","طرمبة واسع",3,8,12,120,"كل ناحية","42.5 × 11–12"),
-    E("pl4","قطنية",3,10,15,90,"كجم","15 × 15 لو مفيش وجع، ولو فيه ارجع وزن جسم"),
-    E("pl5","رفرفة خلفي (جهاز)",3,12,15,90,"بلطات","خطوة أتقل من 115 × 12–15"),
-    E("pl6","فيس بول",3,12,15,90,"كجم","32.5 × 15 في الـ 3 ستات"),
-    E("pl7","بار كيرل باي",3,6,10,120,"كجم","35 × 10 في الـ 3 ستات"),
-    E("pl8","انكلين دامبل كيرل",3,8,12,90,"كجم","15 × 9–10",{left:true}),
-    E("pl9","هامر دامبل كيرل",3,10,12,90,"كجم","20 × 10–12",{left:true}),
-  ],
-  legs:[
-    E("lg1","Smith Squat",4,6,10,150,"كل ناحية","37.5 × 8–10 لو الضهر تمام، ولو فيه أي وجع فضّل على 35"),
-    E("lg2","Leg Press",3,10,12,120,"باوند","خطوة أتقل من 250 × 10–12"),
-    E("lg3","Leg Extension",3,12,15,90,"بلطات","12 × 15، وبعدها نزوّد"),
-    E("lg4","Cable Pull-Through",3,10,12,90,"كجم","12.5 × 10–12"),
-    E("lg5","Seated Leg Curl",3,10,12,90,"كجم","خطوة أتقل من 65 × 10–12"),
-    E("lg6","Hip Adduction",3,12,15,60,"كجم","",{optional:true}),
-    E("lg7","Hip Abduction",3,12,15,60,"كجم","",{optional:true}),
-    E("lg8","Standing Calf",3,10,15,60,"كجم","خطوة أتقل من 96 × 12+"),
-    E("lg9","Seated Calf",3,12,20,60,"كجم","20 × 20، وبعدها نزوّد"),
-  ],
-  absA:[
-    E("aa1","Machine Crunch",3,12,15,45,"كجم","140 × 12–15 في الـ 3 ستات"),
-    E("aa2","Reverse Crunch",3,12,15,45,"وزن جسم","نزول في 3 ثواني، وقف عند 15 بالكتير"),
-  ],
-  absB:[
-    E("ab1","Pallof Press",3,10,12,45,"كجم","لكل ناحية"),
-    E("ab2","Side Plank",2,30,45,45,"وزن جسم","لكل ناحية",{seconds:true}),
-  ],
-  cardio:{minutes:20,note:"إنكلاين 15، سرعة 4"},
-  warmup:{minutes:5,note:"ستين خفاف على أول تمرين"}
-};
-const DAYS={push:{t:"Push",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",d:"رجل وسمانة",ex:{absA:true}}};
-const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
-const KEY="gym-time-tracker-v1";
+<nav id="nav" class="tabbar" aria-label="الأقسام">
+  <button data-v="home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>تمرين</button>
+  <button data-v="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 15l4-5 3 3 5-7"/></svg>التقدم</button>
+  <button data-v="body"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><path d="M12 8v6M8 10l4 1.5 4-1.5M9.5 21l2.5-7 2.5 7"/></svg>الجسم</button>
+  <button data-v="food"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 0-3 3-3 6s1 4 3 4v8"/></svg>الأكل</button>
+</nav>
+<div id="tip" class="tip hidden" role="status"></div>
+<script src="plan.js"></script>
+<script src="app.js"></script>
+<script src="dash.js"></script>
 
-/* ---------- storage ---------- */
-const PLAN_VER="2026-10-15b";
-let D=load();
-/* new targets from the coach update automatically; your own edits to names/sets/order stay */
-(function syncTargets(){
-  if(D.planVer===PLAN_VER)return;
-  Object.keys(DEFAULTS).forEach(k=>{
-    if(!Array.isArray(DEFAULTS[k])||!Array.isArray(D.plans[k]))return;
-    DEFAULTS[k].forEach(def=>{const mine=D.plans[k].find(x=>x.id===def.id);if(mine)mine.target=def.target;else D.plans[k].push(JSON.parse(JSON.stringify(def)))});
-  });
-  if(!D.plans.warmup)D.plans.warmup=JSON.parse(JSON.stringify(DEFAULTS.warmup));
-  D.planVer=PLAN_VER;save();
-})();
-function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.plans)return v}catch(e){}
-  return {plans:JSON.parse(JSON.stringify(DEFAULTS)),history:[],active:null};}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
-
-/* ---------- helpers ---------- */
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const fmt=(sec,h)=>{sec=Math.max(0,Math.round(sec));const H=Math.floor(sec/3600),M=Math.floor(sec%3600/60),s=sec%60;
-  return h?`${H}:${String(M).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${Math.floor(sec/60)}:${String(s).padStart(2,"0")}`};
-const hm=min=>`${Math.floor(min/60)}:${String(min%60).padStart(2,"0")}`;
-const clock=t=>new Date(t).toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-digit"});
-const dateLbl=t=>new Date(t).toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long"});
-function show(id){["home","session","summary","settings"].forEach(s=>$(s).classList.toggle("hidden",s!==id));window.scrollTo(0,0)}
-const setsTxt=(sets,ex)=>sets.map(x=>x.w?`${x.w}×${x.r}`:`${x.r}${ex&&ex.seconds?" ث":""}`).join("، ");
-/* tap-twice confirm (popup dialogs are blocked inside the viewer) */
-function armed(btn,msg){
-  if(btn.dataset.armed){clearTimeout(btn._t);btn.innerHTML=btn._orig;delete btn.dataset.armed;return true}
-  btn._orig=btn.innerHTML;btn.dataset.armed="1";btn.textContent=msg;
-  btn._t=setTimeout(()=>{if(btn.dataset.armed){btn.innerHTML=btn._orig;delete btn.dataset.armed}},4000);return false}
-
-/* ---------- sound / vibration / wake ---------- */
-let ctx=null,lock=null;
-function unlock(){try{if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume()}catch(e){}}
-function beep(f,d,delay){if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime+delay;o.type="square";o.frequency.value=f;
-  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.35,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
-  o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+d+.05)}
-function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
-function alarm(){beep(880,.2,0);beep(880,.2,.3);beep(1175,.45,.6);vib([300,150,300,150,700]);
-  const b=$("timerBox");b.classList.remove("flash");void b.offsetWidth;b.classList.add("flash")}
-function warn(){beep(660,.12,0);vib(120)}
-async function wake(){try{if("wakeLock" in navigator&&document.visibilityState==="visible")lock=await navigator.wakeLock.request("screen")}catch(e){}}
-document.addEventListener("visibilitychange",()=>{if(D.active)wake()});
-document.addEventListener("pointerdown",unlock);
-
-/* ---------- history lookup ---------- */
-function lastFor(exId){for(let i=D.history.length-1;i>=0;i--){const it=D.history[i].items.find(x=>x.id===exId&&x.logs&&x.logs.length);if(it)return{it,at:D.history[i].startedAt}}return null}
-function hintFor(ex){
-  const L=lastFor(ex.id);if(!L||ex.seconds)return null;
-  const logs=L.it.logs,full=logs.length>=ex.sets&&logs.every(x=>+x.r>=ex.hi);
-  if(full)return{t:"المرة اللي فاتت وصلت أعلى الرينج في كل الستات: زوّد الوزن خطوة.",c:""};
-  if(logs.some(x=>+x.r<ex.lo))return{t:"المرة اللي فاتت فيه ستات تحت الرينج: خليك على نفس الوزن.",c:"warn"};
-  return{t:"نفس الوزن، وحاول تزوّد عدة.",c:""};
-}
-
-/* ---------- HOME ---------- */
-let pickedDay=null,pickedExtras={};
-function renderHome(){
-  $("resumeBtn").classList.toggle("hidden",!D.active);
-  $("days").innerHTML=Object.keys(DAYS).map(k=>{
-    const last=[...D.history].reverse().find(h=>h.day===k);
-    return `<button class="day" data-day="${k}"><div><b>${DAYS[k].t}</b><span>${DAYS[k].d}${last?` • آخر مرة ${dateLbl(last.startedAt)}`:""}</span></div><span class="go">ابدأ</span></button>`}).join("");
-  $("days").querySelectorAll(".day").forEach(b=>b.onclick=()=>openSetup(b.dataset.day,b));
-  $("days").classList.remove("hidden");$("setup").classList.add("hidden");
-  const H=[...D.history].reverse().slice(0,8);
-  $("histBox").classList.toggle("hidden",!H.length);
-  $("histList").innerHTML=H.map(h=>`<li><span>${DAYS[h.day].t} • ${dateLbl(h.startedAt)}</span><button data-id="${h.startedAt}">الملخص</button></li>`).join("");
-  $("histList").querySelectorAll("button").forEach(b=>b.onclick=()=>{const h=D.history.find(x=>x.startedAt==b.dataset.id);openSummary(h)});
-}
-function openSetup(day,btn){
-  if(D.active&&btn&&!armed(btn,"فيه تمرينة مفتوحة. اضغط تاني للغيها وتبدأ جديدة"))return;
-  if(D.active){D.active=null;save()}
-  pickedDay=day;pickedExtras={warmup:true,cardio:false,absA:false,absB:false,...DAYS[day].ex};
-  $("setupTitle").textContent=`${DAYS[day].t}: إيه الإضافات النهارده؟`;
-  const WU=D.plans.warmup||DEFAULTS.warmup;
-  const names={warmup:`تسخين ${WU.minutes} دقايق`,cardio:`مشاية ${D.plans.cardio.minutes} دقيقة`,absA:"بطن A",absB:"بطن B (الجنب)"};
-  $("extras").innerHTML=Object.keys(names).map(k=>`<button class="chip" data-k="${k}" aria-pressed="${!!pickedExtras[k]}">${names[k]}</button>`).join("");
-  $("extras").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{pickedExtras[c.dataset.k]=!pickedExtras[c.dataset.k];c.setAttribute("aria-pressed",pickedExtras[c.dataset.k])});
-  $("days").classList.add("hidden");$("setup").classList.remove("hidden");
-}
-function startSession(){
-  unlock();
-  const items=D.plans[pickedDay].map(x=>({...x,logs:[],rir:""}));
-  if(pickedExtras.warmup){const wu=D.plans.warmup||DEFAULTS.warmup;items.unshift({id:"warmup",name:"تسخين",timed:true,minutes:+wu.minutes||5,note:wu.note,done:false})}
-  if(pickedExtras.cardio)items.push({id:"cardio",name:"مشاية إنكلاين",timed:true,minutes:+D.plans.cardio.minutes||20,note:D.plans.cardio.note,done:false});
-  if(pickedExtras.absA)D.plans.absA.forEach(x=>items.push({...x,logs:[],rir:"",abs:true}));
-  if(pickedExtras.absB)D.plans.absB.forEach(x=>items.push({...x,logs:[],rir:"",abs:true}));
-  D.active={day:pickedDay,startedAt:Date.now(),budget:+$("budget").value,items,i:0,phase:"work",endsAt:0,dur:0,advance:false,alerted:false,warned:false};
-  save();wake();show("session");renderSession();
-}
-
-/* ---------- SESSION ---------- */
-const A=()=>D.active;
-const isDone=it=>it.timed?it.done:it.logs.length>=it.sets;
-function nextIndex(from){const its=A().items;for(let k=from+1;k<its.length;k++)if(!isDone(its[k]))return k;for(let k=0;k<its.length;k++)if(!isDone(its[k]))return k;return -1}
-function renderSession(){
-  const S=A();if(!S){show("home");renderHome();return}
-  const it=S.items[S.i];
-  $("sDay").textContent=DAYS[S.day].t;$("budgetLbl").textContent=hm(S.budget);
-  const resting=S.phase==="rest"||S.phase==="timed";
-  $("workCard").classList.toggle("hidden",resting);$("timerBox").classList.toggle("hidden",!resting);
-
-  $("step").textContent=`${S.i+1} من ${S.items.length}${it.optional?" • اختياري":""}`;
-  $("exName").textContent=it.name;
-  $("exUnit").textContent=it.timed?(it.id==="warmup"?"قبل الحديد":"كارديو"):it.unit||"";
-  if(it.timed){
-    $("exMeta").textContent=`${it.minutes} دقيقة${it.note?` • ${it.note}`:""}`;
-    $("exGoal").classList.add("hidden");
-    $("exLast").classList.add("hidden");$("exHint").classList.add("hidden");$("dots").classList.add("hidden");$("setForm").classList.add("hidden");
-    $("undoBtn").classList.add("hidden");
-    $("note").textContent=it.done?"اتعملت ✅":"";
-    $("mainBtn").textContent=it.done?"التمرين الجاي":`ابدأ ${it.minutes} دقيقة`;
-  }else{
-    const s=it.logs.length;
-    $("exMeta").innerHTML=`${it.sets} × <span class="num">${it.lo}–${it.hi}</span>${it.seconds?" ثانية":""} • راحة <span class="num">${fmt(it.rest)}</span>`;
-    $("exGoal").classList.toggle("hidden",!it.target);
-    $("exGoal").innerHTML=`<small>الهدف النهارده</small>${esc(it.target)}`;
-    const L=lastFor(it.id);
-    $("exLast").classList.toggle("hidden",!L);
-    if(L)$("exLast").innerHTML=`المرة اللي فاتت: <b class="num">${esc(setsTxt(L.it.logs,it))}</b>${L.it.rir?` (RIR ${esc(L.it.rir)})`:""}`;
-    const h=hintFor(it);const leftTxt=it.left?"ابدأ بالشمال، واليمين نفس العدات.":"";
-    $("exHint").className="hint"+(h&&h.c?" "+h.c:"");
-    $("exHint").classList.toggle("hidden",!h&&!leftTxt);
-    $("exHint").textContent=[h&&h.t,leftTxt].filter(Boolean).join(" ");
-    $("dots").classList.remove("hidden");
-    $("dots").innerHTML=Array.from({length:Math.max(it.sets,s)},(_,k)=>`<span class="dot ${k<s?"done":k===s?"cur":""}"></span>`).join("");
-    const done=s>=it.sets;
-    $("setForm").classList.toggle("hidden",false);
-    const lastSet=s>=it.sets-1;
-    $("rirBox").classList.toggle("hidden",!lastSet);$("grid").classList.toggle("three",lastSet);
-    $("rLbl").textContent=it.seconds?"الثواني":"العدات";
-    $("wLbl").textContent=it.unit==="كل ناحية"?"الوزن (ناحية)":"الوزن";
-    $("w").placeholder=it.unit==="وزن جسم"?"اختياري":"";
-    const prevW=s?it.logs[s-1].w:(L&&L.it.logs[0]?L.it.logs[0].w:"");
-    $("w").value=prevW;$("r").value="";$("rir").value="";
-    $("undoBtn").classList.toggle("hidden",!s);
-    $("note").textContent=done?"خلصت الستات المطلوبة. لو عايز ست زيادة، سجّله.":`ست ${s+1} من ${it.sets}`;
-    $("mainBtn").textContent=`خلصت الست ${s+1}`;
-  }
-  // timer labels
-  if(S.phase==="rest"){
-    const nx=S.advance?S.items[nextIndex(S.i)]:it;
-    $("tLbl").textContent="راحة";$("plusBtn").classList.remove("hidden");$("endBtn").textContent="خلصت الراحة";
-    $("nextup").innerHTML=S.advance?(nx?`الجاي:<b>${esc(nx.name)}</b>`:"دي كانت آخر ست"):`الجاي: ست ${it.logs.length+1} من ${it.sets}<b>${esc(it.name)}</b>`;
-  }else if(S.phase==="timed"){
-    $("tLbl").textContent=it.name;$("plusBtn").classList.add("hidden");$("endBtn").textContent="خلصت";$("nextup").textContent=it.note||"";
-  }
-  $("planList").innerHTML=S.items.map((x,k)=>{
-    const prog=x.timed?(x.done?"✅":`${x.minutes} د`):(x.logs.length>=x.sets?"✅":`${x.logs.length}/${x.sets}`);
-    return `<li class="${isDone(x)?"done":""} ${k===S.i?"cur":""}"><button data-k="${k}"><span>${esc(x.name)}${x.optional?" (اختياري)":""}${x.target?`<small>الهدف: ${esc(x.target)}</small>`:""}</span><span class="num">${prog}</span></button></li>`}).join("");
-  $("planList").querySelectorAll("button").forEach(b=>b.onclick=()=>jump(+b.dataset.k));
-  tick();
-}
-function jump(k){const S=A();S.i=k;S.phase="work";S.alerted=false;save();renderSession();window.scrollTo(0,0)}
-function doneSet(){
-  unlock();const S=A(),it=S.items[S.i];
-  if(it.timed){if(it.done){advance();return}S.phase="timed";S.dur=it.minutes*60;S.endsAt=Date.now()+S.dur*1000;S.alerted=false;S.warned=false;save();renderSession();return}
-  const w=$("w").value.trim(),r=$("r").value.trim();
-  if(!r){$("r").focus();$("note").textContent=it.seconds?"اكتب الثواني الأول.":"اكتب العدات الأول.";return}
-  it.logs.push({w,r});
-  if($("rir").value)it.rir=$("rir").value;
-  const blockDone=it.logs.length>=it.sets;
-  if(blockDone&&nextIndex(S.i)===-1){save();endSession();return}
-  S.phase="rest";S.dur=it.rest;S.endsAt=Date.now()+it.rest*1000;S.advance=blockDone;S.alerted=false;S.warned=false;save();renderSession();
-}
-function advance(){const S=A();const n=nextIndex(S.i);if(n===-1){endSession();return}S.i=n;S.phase="work";save();renderSession()}
-function endRest(){const S=A();S.alerted=false;if(S.phase==="timed"){S.items[S.i].done=true;advance();return}
-  if(S.advance)advance();else{S.phase="work";save();renderSession()}}
-function skip(){const S=A();const n=nextIndex(S.i);if(n===-1||n===S.i){if(armed($("skipBtn"),"مفيش تمارين تانية. اضغط تاني للإنهاء"))endSession();return}S.i=n;S.phase="work";save();renderSession()}
-function undo(){const S=A(),it=S.items[S.i];if(it.logs.length){it.logs.pop();if(it.logs.length<it.sets)it.rir="";save();renderSession()}}
-function endSession(){
-  const S=A();if(!S)return;S.finishedAt=Date.now();
-  D.history.push({day:S.day,startedAt:S.startedAt,finishedAt:S.finishedAt,items:S.items.map(x=>x.timed?{id:x.id,name:x.name,timed:true,minutes:x.minutes,done:x.done}:{id:x.id,name:x.name,unit:x.unit,seconds:!!x.seconds,abs:!!x.abs,optional:!!x.optional,logs:x.logs,rir:x.rir})});
-  if(D.history.length>80)D.history=D.history.slice(-80);
-  const h=D.history[D.history.length-1];D.active=null;save();try{lock&&lock.release()}catch(e){}
-  openSummary(h);
-}
-function tick(){
-  const S=A();if(!S||$("session").classList.contains("hidden"))return;
-  const el=(Date.now()-S.startedAt)/1000;$("elapsed").textContent=fmt(el,true);
-  const left=S.budget-el/60,st=$("status");
-  const remaining=S.items.filter(x=>!isDone(x)).length;
-  if(left<0){st.className="status late";st.textContent=`عدّيت الوقت بـ ${Math.ceil(-left)} دقيقة. فاضل ${remaining} تمرين.`}
-  else{st.className="status ok";st.textContent=`فاضل ${Math.floor(left)} دقيقة • ${remaining} تمرين • خروج ${clock(S.startedAt+S.budget*60000)}`}
-  if(S.phase==="rest"||S.phase==="timed"){
-    const l=(S.endsAt-Date.now())/1000;$("digits").textContent=fmt(Math.max(0,l));
-    const C=2*Math.PI*52,p=$("prog");p.style.strokeDasharray=C;p.style.strokeDashoffset=C*(1-Math.max(0,l)/S.dur);
-    if(l<=10&&l>0&&!S.warned){S.warned=true;warn()}
-    if(l<=0&&!S.alerted){S.alerted=true;alarm();save();
-      if(S.phase==="rest")setTimeout(()=>{if(A()&&A().phase==="rest")endRest()},1300);
-      else{$("tLbl").textContent="خلصت ✅"}}
-  }
-}
-setInterval(tick,250);
-
-/* ---------- SUMMARY ---------- */
-function summaryText(h){
-  const dur=Math.round((h.finishedAt-h.startedAt)/60000);
-  const out=[`${DAYS[h.day].t} — ${dateLbl(h.startedAt)}`,`دخول ${clock(h.startedAt)}، خروج ${clock(h.finishedAt)} (${hm(dur)})`,""];
-  let n=1,absHead=false;
-  h.items.forEach(x=>{
-    if(x.timed){out.push(`${x.name}: ${x.done?`${x.minutes} دقيقة ✅`:"متعملتش"}`);return}
-    if(x.abs&&!absHead){out.push("","بطن:");absHead=true}
-    if(!x.logs.length&&x.optional)return;
-    const u=x.unit&&x.unit!=="كجم"?` (${x.unit})`:"";
-    out.push(`${x.abs?"-":n++ +"-"} ${x.name}${u}: ${x.logs.length?setsTxt(x.logs,x):"متلعبش"}${x.rir?` (RIR ${x.rir})`:""}`);
-  });
-  return out.join("\n");
-}
-let curSum=null;
-function openSummary(h){curSum=h;$("sumText").value=summaryText(h);$("shareBtn").textContent="ابعت الملخص";$("copyBtn").textContent="نسخ";show("summary")}
-async function copyText(t,btn){try{await navigator.clipboard.writeText(t);btn.textContent="اتنسخ ✅"}catch(e){const ta=$("sumText");ta.select();try{document.execCommand("copy");btn.textContent="اتنسخ ✅"}catch(_){btn.textContent="حدد النص وانسخه"}}}
-$("shareBtn").onclick=async()=>{const t=$("sumText").value;if(navigator.share){try{await navigator.share({text:t});return}catch(e){if(e.name==="AbortError")return}}copyText(t,$("shareBtn"))};
-$("copyBtn").onclick=()=>copyText($("sumText").value,$("copyBtn"));
-$("homeBtn").onclick=()=>{show("home");renderHome()};
-$("delSumBtn").onclick=()=>{if(!curSum)return;if(!armed($("delSumBtn"),"اضغط تاني عشان تمسحها نهائياً"))return;
-  D.history=D.history.filter(x=>x.startedAt!==curSum.startedAt);curSum=null;save();show("home");renderHome()};
-
-/* ---------- SETTINGS ---------- */
-let tab="push",openEx=null;
-const TABS={push:"Push",pull:"Pull",legs:"Legs",absA:"بطن A",absB:"بطن B",cardio:"مشاية"};
-function renderSettings(){
-  $("tabs").innerHTML=Object.keys(TABS).map(k=>`<button class="chip" data-t="${k}" aria-pressed="${k===tab}">${TABS[k]}</button>`).join("");
-  $("tabs").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{tab=c.dataset.t;openEx=null;renderSettings()});
-  const isC=tab==="cardio";$("cardioEdit").classList.toggle("hidden",!isC);$("exList").classList.toggle("hidden",isC);$("addEx").classList.toggle("hidden",isC);
-  if(isC){$("cMin").value=D.plans.cardio.minutes;$("cNote").value=D.plans.cardio.note;return}
-  const list=D.plans[tab];
-  $("exList").innerHTML=list.map((x,k)=>`<div class="ex">
-    <div class="exhead"><div class="nm">${esc(x.name)}<span class="sm">${x.sets} × ${x.lo}–${x.hi}${x.seconds?" ث":""} • راحة ${fmt(x.rest)} • ${esc(x.unit)}${x.optional?" • اختياري":""}</span></div>
-      <button class="mini" data-a="up" data-k="${k}" aria-label="لفوق">↑</button><button class="mini" data-a="down" data-k="${k}" aria-label="لتحت">↓</button>
-      <button class="mini" data-a="edit" data-k="${k}">${openEx===k?"تم":"تعديل"}</button></div>
-    ${openEx===k?`<div class="edit">
-      <div class="full"><label>الاسم</label><input type="text" data-f="name" value="${esc(x.name)}"></div>
-      <div><label>الستات</label><input type="number" inputmode="numeric" data-f="sets" value="${x.sets}"></div>
-      <div><label>الراحة (ثانية)</label><input type="number" inputmode="numeric" data-f="rest" value="${x.rest}"></div>
-      <div><label>أقل عدات</label><input type="number" inputmode="numeric" data-f="lo" value="${x.lo}"></div>
-      <div><label>أعلى عدات</label><input type="number" inputmode="numeric" data-f="hi" value="${x.hi}"></div>
-      <div class="full"><label>الوحدة</label><select data-f="unit">${UNITS.map(u=>`<option ${u===x.unit?"selected":""}>${u}</option>`).join("")}</select></div>
-      <div class="full"><label>الهدف</label><input type="text" data-f="target" value="${esc(x.target)}"></div>
-      <label class="check"><input type="checkbox" data-f="optional" ${x.optional?"checked":""}> اختياري</label>
-      <label class="check"><input type="checkbox" data-f="left" ${x.left?"checked":""}> ابدأ بالشمال</label>
-      <label class="check full"><input type="checkbox" data-f="seconds" ${x.seconds?"checked":""}> بالثواني بدل العدات</label>
-      <button class="ghost full" data-a="del" data-k="${k}" style="color:var(--plate);border-color:var(--plate)">شيل التمرين</button>
-    </div>`:""}</div>`).join("");
-  $("exList").querySelectorAll("button[data-a]").forEach(b=>b.onclick=()=>{const k=+b.dataset.k,a=b.dataset.a;
-    if(a==="del"){if(!armed(b,"اضغط تاني عشان تشيله"))return;list.splice(k,1);openEx=null}
-    if(a==="edit")openEx=openEx===k?null:k;
-    if(a==="up"&&k>0){[list[k-1],list[k]]=[list[k],list[k-1]];openEx=null}
-    if(a==="down"&&k<list.length-1){[list[k+1],list[k]]=[list[k],list[k+1]];openEx=null}
-    if(a==="del"&&false){}
-    save();renderSettings()});
-  $("exList").querySelectorAll("[data-f]").forEach(inp=>inp.addEventListener("change",()=>{const x=list[openEx],f=inp.dataset.f;
-    x[f]=inp.type==="checkbox"?inp.checked:inp.type==="number"?Math.max(0,+inp.value||0):inp.value.trim();save()}));
-}
-$("addEx").onclick=()=>{D.plans[tab].push(E("x"+Date.now(),"تمرين جديد",3,8,12,90,"كجم",""));openEx=D.plans[tab].length-1;save();renderSettings()};
-$("cMin").onchange=()=>{D.plans.cardio.minutes=Math.max(1,+$("cMin").value||20);save()};
-$("cNote").onchange=()=>{D.plans.cardio.note=$("cNote").value.trim();save()};
-$("exportBtn").onclick=()=>{$("backup").value=JSON.stringify({plans:D.plans,history:D.history});copyText($("backup").value,$("exportBtn"))};
-$("importBtn").onclick=()=>{try{const v=JSON.parse($("backup").value);if(!v.plans)throw 0;if(!armed($("importBtn"),"هتستبدل كل حاجة. اضغط تاني"))return;
-  D.plans=v.plans;D.history=v.history||[];save();renderSettings();$("importBtn").textContent="اترجعت ✅"}catch(e){$("importBtn").textContent="النسخة دي مش سليمة"}};
-$("resetPlans").onclick=()=>{if(!armed($("resetPlans"),"اضغط تاني للتأكيد (السجل مش هيتمسح)"))return;D.plans=JSON.parse(JSON.stringify(DEFAULTS));save();renderSettings()};
-
-/* ---------- wiring ---------- */
-$("toSettings").onclick=()=>{show("settings");renderSettings()};
-$("backHome").onclick=()=>{show("home");renderHome()};
-$("cancelSetup").onclick=renderHome;
-$("startBtn").onclick=startSession;
-$("resumeBtn").onclick=()=>{wake();show("session");renderSession()};
-$("mainBtn").onclick=doneSet;
-$("endBtn").onclick=endRest;
-$("plusBtn").onclick=()=>{const S=A();S.endsAt+=30000;S.dur+=30;S.warned=false;save()};
-$("skipBtn").onclick=skip;$("undoBtn").onclick=undo;
-$("finishBtn").onclick=()=>{if(armed($("finishBtn"),"اضغط تاني عشان تنهي وتطلع الملخص"))endSession()};
-$("restartBtn").onclick=()=>{const S=A();if(!S)return;
-  if(!armed($("restartBtn"),"اضغط تاني: هتتمسح ومش هتتحفظ"))return;
-  const day=S.day;D.active=null;save();try{lock&&lock.release()}catch(e){}
-  show("home");renderHome();openSetup(day)};
-["w","r"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();id==="w"?$("r").focus():doneSet()}}));
-
-if(D.active){show("session");renderSession();wake()}else{show("home");renderHome()}
-if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
-</script>
 </body>
 </html>
