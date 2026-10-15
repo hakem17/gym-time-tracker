@@ -291,19 +291,19 @@ const DEFAULTS={
     E("pl9","هامر دامبل كيرل",3,10,12,90,"كجم","20 × 10–12",{left:true}),
   ],
   legs:[
-    E("lg1","Smith Squat",4,6,10,150,"كل ناحية","35 × 10، إيدك على البار"),
-    E("lg2","Leg Press",3,10,12,120,"باوند","خطوة أتقل من 230 × 10+"),
-    E("lg3","Leg Extension",3,12,15,90,"بلطات","12 × 12+"),
-    E("lg4","Cable Pull-Through",3,10,12,90,"كجم","أتقل من 7.5 × 10–12"),
-    E("lg5","Seated Leg Curl",3,10,12,90,"كجم","65 × 12"),
+    E("lg1","Smith Squat",4,6,10,150,"كل ناحية","37.5 × 8–10 لو الضهر تمام، ولو فيه أي وجع فضّل على 35"),
+    E("lg2","Leg Press",3,10,12,120,"باوند","خطوة أتقل من 250 × 10–12"),
+    E("lg3","Leg Extension",3,12,15,90,"بلطات","12 × 15، وبعدها نزوّد"),
+    E("lg4","Cable Pull-Through",3,10,12,90,"كجم","12.5 × 10–12"),
+    E("lg5","Seated Leg Curl",3,10,12,90,"كجم","خطوة أتقل من 65 × 10–12"),
     E("lg6","Hip Adduction",3,12,15,60,"كجم","",{optional:true}),
     E("lg7","Hip Abduction",3,12,15,60,"كجم","",{optional:true}),
-    E("lg8","Standing Calf",3,10,15,60,"كجم","أتقل من 88 × 12+"),
-    E("lg9","Seated Calf",3,12,20,60,"كجم","20 × 17–18"),
+    E("lg8","Standing Calf",3,10,15,60,"كجم","خطوة أتقل من 96 × 12+"),
+    E("lg9","Seated Calf",3,12,20,60,"كجم","20 × 20، وبعدها نزوّد"),
   ],
   absA:[
-    E("aa1","Machine Crunch",3,12,15,45,"كجم","خطوة أتقل من 140 × 12–15"),
-    E("aa2","Reverse Crunch",3,12,15,45,"وزن جسم","نزول في 3 ثواني × 15"),
+    E("aa1","Machine Crunch",3,12,15,45,"كجم","140 × 12–15 في الـ 3 ستات"),
+    E("aa2","Reverse Crunch",3,12,15,45,"وزن جسم","نزول في 3 ثواني، وقف عند 15 بالكتير"),
   ],
   absB:[
     E("ab1","Pallof Press",3,10,12,45,"كجم","لكل ناحية"),
@@ -317,7 +317,7 @@ const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم
 const KEY="gym-time-tracker-v1";
 
 /* ---------- storage ---------- */
-const PLAN_VER="2026-10-15";
+const PLAN_VER="2026-10-15b";
 let D=load();
 /* new targets from the coach update automatically; your own edits to names/sets/order stay */
 (function syncTargets(){
