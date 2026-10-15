@@ -1,7 +1,7 @@
 const DAYS={push:{t:"Push",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",d:"رجل وسمانة",ex:{absA:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-16a";
+const BUILD="2026-10-16b";
 
 /* ---------- storage ---------- */
 let D=load();
@@ -47,7 +47,14 @@ function show(id){["home","session","summary","settings","progress","body","food
   window.scrollTo(0,0);
   if(id!=="home"&&TAB_VIEWS.includes(id)&&window.GTT_render)GTT_render(id)}
 const histAll=()=>window.GTT_allSessions?GTT_allSessions():D.history;
-const refreshDash=()=>{try{window.GTT_refresh&&GTT_refresh()}catch(e){}};
+const refreshDash=()=>{try{window.GTT_refresh&&GTT_refresh()}catch(e){};try{window.GTT_queueSync&&GTT_queueSync()}catch(e){}};
+const prog=()=>({...PROGRAM,...(D.program||{})});
+function programWeek(t=Date.now()){const p=prog(),s=new Date(p.start+"T00:00:00").getTime();return Math.floor((weekStart(t)-weekStart(s))/(7*864e5))+1}
+const isDeload=()=>{const p=prog();return programWeek()===p.deloadWeek};
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.remove("hidden");t.classList.remove("pop");void t.offsetWidth;t.classList.add("pop");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.add("hidden"),3200)}
+const e1=(w,r)=>{w=parseFloat(w);r=parseFloat(r);return w>0&&r>0?w*(1+r/30):0};
+function bestEver(id){let m=0;histAll().forEach(h=>h.items.forEach(x=>{if(x.id===id&&x.logs)x.logs.forEach(l=>{m=Math.max(m,e1(l.w,l.r))})}));return m}
+function stepFor(it,w){w=parseFloat(w)||0;if(it.unit==="بلطات"&&w<=30)return 1;if((it.unit==="بلطات"||it.unit==="باوند")&&w>=60)return 10;return 2.5}
 /* tap-twice confirm (popups are unreliable inside installed web apps) */
 function armed(btn,msg){
   if(btn.dataset.armed){clearTimeout(btn._t);btn.innerHTML=btn._orig;delete btn.dataset.armed;return true}
@@ -83,7 +90,8 @@ function hintFor(ex){
 /* ---------- HOME ---------- */
 function ring(r,frac,color){const C=2*Math.PI*r;return`<circle class="trk" cx="75" cy="75" r="${r}" stroke="${color}"/><circle class="arc" cx="75" cy="75" r="${r}" stroke="${color}" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-off="${C*(1-Math.min(1,frac))}"/>`}
 function renderHome(){
-  $("todayLbl").textContent=new Date().toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long"});
+  const pw=programWeek(),P=prog();
+  $("todayLbl").textContent=new Date().toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long"})+(pw>=1&&pw<=P.weeks?` • أسبوع ${pw} من ${P.weeks}`:"");
   $("resumeBtn").classList.toggle("hidden",!D.active);
   const H=histAll(),wk=H.filter(h=>h.startedAt>=weekStart());
   const n=wk.length,c=wk.filter(h=>h.items.some(x=>x.timed&&x.id==="cardio"&&x.done)).length,a=wk.filter(h=>h.items.some(x=>x.abs&&x.logs&&x.logs.length)).length;
@@ -102,6 +110,12 @@ function renderHome(){
       <span class="go"><span class="muted" style="font-size:14px">${ago(nextDay)}</span><span class="pill move">ابدأ</span></span></button>
     <div class="days2">${ROTATION.filter(k=>k!==nextDay).map(k=>`<button class="dmini" data-day="${k}"><b>${DAYS[k].t}</b><span>${ago(k)}</span></button>`).join("")}</div>`;
   $("days").querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openSetup(b.dataset.day));
+  const banners=[];
+  if(isDeload())banners.push(`<div class="card banner"><b>أسبوع الديلود</b><span>نفس أوزان آخر مرة، ونص الستات، ووقف وفاضلك 3 عدات. الأهداف اتغيرت لوحدها.</span></div>`);
+  else if(pw===P.deloadWeek-1)banners.push(`<div class="card banner"><b>الأسبوع الجاي ديلود</b><span>الأسبوع ده آخر أسبوع تزوّد فيه.</span></div>`);
+  if(new Date().getDay()===5&&window.GTT_weekReport)banners.push(`<button class="card banner" id="repBtn" style="width:100%;text-align:right"><b>تقرير الأسبوع جاهز</b><span>اضغط تشوفه وتبعته في الشات</span></button>`);
+  $("banners").innerHTML=banners.join("");
+  const rb=$("repBtn");if(rb)rb.onclick=()=>openReport();
   const HL=[...D.history].reverse().slice(0,6);
   $("histBox").classList.toggle("hidden",!HL.length);
   $("histList").innerHTML=HL.map(h=>{const sets=h.items.reduce((s,x)=>s+(x.logs?x.logs.length:0),0),m=Math.round((h.finishedAt-h.startedAt)/60000);
@@ -135,11 +149,12 @@ function defaultRows(x){
 }
 function startSession(){
   unlock();$("sheet").classList.add("hidden");
-  const items=D.plans[pickedDay].map(x=>({...x,rows:defaultRows(x),rir:""}));
+  const dl=isDeload(),mk=x=>{const y={...x};if(dl){y.sets=Math.max(1,Math.ceil(x.sets/2));y.target="ديلود: نفس وزن آخر مرة، ووقف وفاضلك 3 عدات"}return{...y,rows:defaultRows(y),rir:""}};
+  const items=D.plans[pickedDay].map(mk);
   if(pickedExtras.warmup){const wu=D.plans.warmup||DEFAULTS.warmup;items.unshift({id:"warmup",name:"تسخين",timed:true,minutes:+wu.minutes||5,note:wu.note,done:false})}
   if(pickedExtras.cardio)items.push({id:"cardio",name:"مشاية إنكلاين",timed:true,minutes:+D.plans.cardio.minutes||20,note:D.plans.cardio.note,done:false});
-  if(pickedExtras.absA)D.plans.absA.forEach(x=>items.push({...x,rows:defaultRows(x),rir:"",abs:true}));
-  if(pickedExtras.absB)D.plans.absB.forEach(x=>items.push({...x,rows:defaultRows(x),rir:"",abs:true}));
+  if(pickedExtras.absA)D.plans.absA.forEach(x=>items.push({...mk(x),abs:true}));
+  if(pickedExtras.absB)D.plans.absB.forEach(x=>items.push({...mk(x),abs:true}));
   D.active={v2:true,day:pickedDay,startedAt:Date.now(),budget:pickedBudget,items,rest:null};
   save();wake();show("session");renderSession();
 }
@@ -169,6 +184,9 @@ function renderSession(){
       <div class="exh"><h3>${esc(it.name)}</h3>${it.unit&&it.unit!=="كجم"?`<span class="tag">${esc(it.unit)}</span>`:""}</div>
       ${it.target?`<div class="goal">الهدف: ${esc(it.target)}</div>`:""}
       ${h||it.left?`<div class="hintl">${[h,it.left?"ابدأ بالشمال":""].filter(Boolean).join(" • ")}</div>`:""}
+      ${(()=>{const X=EXTRA[it.origId||it.id]||{};return`<div class="tools">${X.cues?`<button class="tool" data-cue="${i}">إزاي ألعبه</button>`:""}${X.alts&&X.alts.length&&!nd?`<button class="tool" data-busy="${i}">الجهاز مشغول</button>`:""}${it.origId&&!nd?`<button class="tool" data-orig="${i}">رجّع الأصلي</button>`:""}</div>
+        ${X.cues?`<div class="cues hidden" id="cue${i}">${esc(X.cues)}</div>`:""}
+        ${X.alts&&X.alts.length?`<div class="chips hidden" id="alt${i}"><span class="muted" style="font-size:14px">بدّله بـ</span>${X.alts.map((a,k)=>`<button class="chip" data-alt="${i}" data-k="${k}">${esc(a)}</button>`).join("")}</div>`:""}`})()}
       ${it.skip?`<div class="hintl">اتعدّى: ${esc(it.skip)} <button class="lnk" data-unskip="${i}">رجّعه</button></div>`:`
       <table class="sets"><thead><tr><th>ست</th><th>اللي فات</th><th>${unit}</th><th>${it.seconds?"ثواني":"عدات"}</th><th></th></tr></thead><tbody>
       ${it.rows.map((r,j)=>{const p=prev[j];return`<tr class="${r.done?"done":""}"><td class="n num">${j+1}</td><td class="prev num">${p?(p.w?`${esc(p.w)}×${esc(p.r)}`:esc(p.r)):"—"}</td>
@@ -177,7 +195,8 @@ function renderSession(){
         <td><button class="chk" data-i="${i}" data-j="${j}" aria-label="خلصت ست ${j+1}" aria-pressed="${!!r.done}">${CHECK}</button></td></tr>`}).join("")}
       </tbody></table>
       ${allDone?`<div class="chips"><span class="muted" style="font-size:14px">في آخر ست كان فاضل كام عدة؟</span>${["0","1","2","3","4+"].map(v=>`<button class="chip" data-rir="${i}" data-v="${v}" aria-pressed="${it.rir===v}">${v}</button>`).join("")}</div>`:""}
-      <div class="exf"><button class="lnk" data-add="${i}">+ ست</button>${nd?"":`<button class="lnk dim" data-skip="${i}">عدّي التمرين</button>`}</div>`}
+      ${!allDone&&it.unit!=="وزن جسم"&&it.rows.some(r=>!r.done&&r.w)?(()=>{const nx=it.rows.find(r=>!r.done),st=stepFor(it,nx.w);return`<div class="adj"><span>وزن الستات الجاية</span><button data-step="${i}" data-d="${-st}">−${st}</button><b class="num">${esc(nx.w)}</b><button data-step="${i}" data-d="${st}">+${st}</button></div>`})():""}
+      <div class="exf"><button class="lnk" data-add="${i}">+ ست</button>${!nd&&prev.length?`<button class="lnk" data-same="${i}">✓ كله زي اللي فات</button>`:""}${nd?"":`<button class="lnk dim" data-skip="${i}">عدّي</button>`}</div>`}
       <div class="chips hidden" id="sk${i}"></div></div>`;
   }).join("");
   wireSession();tick();
@@ -194,13 +213,24 @@ function wireSession(){
   L.querySelectorAll("[data-unskip]").forEach(b=>b.onclick=()=>{delete S.items[+b.dataset.unskip].skip;save();renderSession()});
   L.querySelectorAll("[data-time]").forEach(b=>b.onclick=()=>{unlock();const i=+b.dataset.time,it=S.items[i];startRest(it.minutes*60,it.name,i)});
   L.querySelectorAll("[data-mark]").forEach(b=>b.onclick=()=>{const i=+b.dataset.mark;S.items[i].done=true;if(S.rest&&S.rest.timed===i)stopRest();save();renderSession();focusCurrent()});
+  L.querySelectorAll("[data-cue]").forEach(b=>b.onclick=()=>$("cue"+b.dataset.cue).classList.toggle("hidden"));
+  L.querySelectorAll("[data-busy]").forEach(b=>b.onclick=()=>$("alt"+b.dataset.busy).classList.toggle("hidden"));
+  L.querySelectorAll("[data-alt]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.alt],X=EXTRA[it.origId||it.id],k=+b.dataset.k;
+    if(!it.origId){it.origId=it.id;it.origName=it.name;it.origTarget=it.target;it.origUnit=it.unit}
+    it.id=`${it.origId}_alt${k}`;it.name=X.alts[k];it.target="بديل: اختار وزن يوصّلك للرينج المطلوب";it.unit="كجم";it.rows=defaultRows(it);save();renderSession()});
+  L.querySelectorAll("[data-orig]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.orig];it.id=it.origId;it.name=it.origName;it.target=it.origTarget;it.unit=it.origUnit;delete it.origId;it.rows=defaultRows(it);save();renderSession()});
+  L.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.step],d=+b.dataset.d;
+    it.rows.forEach(r=>{if(!r.done&&r.w!==""){const v=Math.max(0,Math.round((parseFloat(r.w)+d)*100)/100);r.w=String(v);r.touched=true}});save();renderSession()});
+  L.querySelectorAll("[data-same]").forEach(b=>b.onclick=()=>{unlock();const i=+b.dataset.same,it=S.items[i];let bad=false;
+    it.rows.forEach(r=>{if(!r.done){if(!r.r){bad=true;return}r.done=true;r.t=Date.now()}});save();renderSession();
+    if(!bad){checkPR(it);const left=S.items.some(x=>!isDone(x));if(left){const nx=S.items[curIndex()];startRest(it.rest||90,`راحة • الجاي: ${nx?nx.name:""}`);focusCurrent()}}});
   L.querySelectorAll("[data-undo-timed]").forEach(b=>b.onclick=()=>{S.items[+b.dataset.undoTimed].done=false;save();renderSession()});
 }
 function toggleSet(i,j){
   unlock();const S=A(),it=S.items[i],r=it.rows[j];
   if(r.done){r.done=false;delete r.t;save();renderSession();return}
   if(!r.r){const inp=$("ex"+i).querySelector(`input[data-j="${j}"][data-f="r"]`);if(inp){inp.focus();inp.style.outline="2px solid var(--warn)"}return}
-  r.done=true;r.t=Date.now();
+  r.done=true;r.t=Date.now();checkPR(it,r);
   // carry a changed weight to the sets below that you haven't edited yet
   it.rows.forEach((x,k)=>{if(k>j&&!x.done&&!x.touched)x.w=r.w});
   save();
@@ -210,6 +240,11 @@ function toggleSet(i,j){
   const nx=S.items[curIndex()];
   startRest(it.rest||90,allDone?`راحة • الجاي: ${nx?nx.name:""}`:`راحة • ${it.name}`);
   if(allDone)focusCurrent();
+}
+function checkPR(it,r){
+  if(it.prShown)return;const prev=bestEver(it.id);if(!prev)return;
+  const v=r?e1(r.w,r.r):Math.max(...doneRows(it).map(x=>e1(x.w,x.r)));
+  if(v>prev*1.001){it.prShown=true;save();toast(`رقم جديد في ${it.name} 🎉`)}
 }
 function focusCurrent(){const i=curIndex();if(i<0)return;const el=$("ex"+i);if(el)setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),150)}
 
@@ -228,7 +263,7 @@ function endSession(){
   const S=A();if(!S)return;S.finishedAt=Date.now();
   D.history.push({day:S.day,startedAt:S.startedAt,finishedAt:S.finishedAt,items:S.items.map(x=>x.timed
     ?{id:x.id,name:x.name,timed:true,minutes:x.minutes,done:!!x.done,skip:x.skip||""}
-    :{id:x.id,name:x.name,unit:x.unit,seconds:!!x.seconds,abs:!!x.abs,optional:!!x.optional,logs:doneRows(x).map(r=>({w:r.w,r:r.r,t:r.t})),rir:x.rir,skip:x.skip||""})});
+    :{id:x.id,name:x.name,unit:x.unit,seconds:!!x.seconds,abs:!!x.abs,optional:!!x.optional,logs:doneRows(x).map(r=>({w:r.w,r:r.r,t:r.t})),rir:x.rir,skip:x.skip||"",...(x.origId?{swappedFrom:x.origName}:{})})});
   if(D.history.length>400)D.history=D.history.slice(-400);
   const h=D.history[D.history.length-1];D.active=null;save();try{lock&&lock.release()}catch(e){}
   refreshDash();openSummary(h);
@@ -261,7 +296,7 @@ function summaryText(h){
     if(x.abs&&!absHead){out.push("","بطن:");absHead=true}
     if(!x.logs.length&&x.optional)return;
     const u=x.unit&&x.unit!=="كجم"?` (${x.unit})`:"";
-    out.push(`${x.abs?"-":n++ +"-"} ${x.name}${u}: ${x.logs.length?setsTxt(x.logs,x):`متلعبش${x.skip?` (${x.skip})`:""}`}${x.rir?` (RIR ${x.rir})`:""}`);
+    out.push(`${x.abs?"-":n++ +"-"} ${x.name}${x.swappedFrom?` (بدل ${x.swappedFrom})`:""}${u}: ${x.logs.length?setsTxt(x.logs,x):`متلعبش${x.skip?` (${x.skip})`:""}`}${x.rir?` (RIR ${x.rir})`:""}`);
   });
   return out.join("\n");
 }
@@ -300,6 +335,15 @@ function renderEdit(){
   $("edSave").onclick=()=>{save();refreshDash();openSummary(h)};
 }
 $("editBtn").onclick=()=>{const b=$("editBox");if(b.classList.contains("hidden")){renderEdit();b.classList.remove("hidden");b.scrollIntoView({behavior:"smooth"})}else b.classList.add("hidden")};
+
+function openReport(){
+  const t=window.GTT_weekReport?GTT_weekReport():"";const sh=$("sheet");
+  sh.innerHTML=`<div class="sheet"><div class="grab"></div><h2>تقرير الأسبوع</h2><textarea id="repText" readonly style="margin-top:12px;background:var(--card2)">${esc(t)}</textarea>
+    <button class="pill move block" id="repShare" style="margin-top:12px">ابعت التقرير</button></div>`;
+  sh.classList.remove("hidden");sh.onclick=e=>{if(e.target===sh)sh.classList.add("hidden")};
+  $("repShare").onclick=async()=>{if(navigator.share){try{await navigator.share({text:t});return}catch(e){if(e.name==="AbortError")return}}copyText(t,$("repShare"))};
+}
+window.GTT_openReport=openReport;
 
 /* ---------- SETTINGS ---------- */
 let tab="push",openEx=null;
@@ -372,4 +416,6 @@ async function hardRefresh(){
   location.replace(location.pathname+"?v="+Date.now());
 }
 $("verLbl").textContent=`النسخة ${BUILD} • الأهداف ${PLAN_VER}`;
+$("progStart").value=prog().start;
+$("progStart").onchange=()=>{D.program={...(D.program||{}),start:$("progStart").value};save();renderHome()};
 $("hardRefresh").onclick=hardRefresh;

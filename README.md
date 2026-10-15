@@ -9,3 +9,4 @@ Installable web app (PWA): rest timer, set logging, session summaries, and a das
   `keys.json` holds the public key plus the private key wrapped with the owner's passphrase.
   Updating the data needs only the public key: `python3 tools/crypt.py encrypt keys.json data.json data.enc.json`.
   Never commit the plaintext `data.json`.
+- `sync.js` — optional backup: with a fine-grained token (Contents: read/write on this repo only) saved in Settings, the phone uploads its log encrypted to `logs/phone.enc.json` after each workout. Read it with `python3 tools/crypt.py decrypt keys.json "<passphrase>" logs/phone.enc.json out.json`.

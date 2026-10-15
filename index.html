@@ -267,6 +267,24 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
 .callout .k{font-size:13px;color:var(--muted);font-weight:600}
 .callout b{display:block;font-size:17px;margin:2px 0}
 .meter{display:none}
+
+.banner{display:block;margin-top:12px}
+.banner b{display:block;font-size:17px;color:var(--exercise)}
+.banner span{font-size:15px;color:var(--muted)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tool{padding:6px 12px;border-radius:999px;background:var(--card2);font-size:13px;font-weight:600;color:var(--ink)}
+.cues{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--card2);font-size:15px;line-height:1.55}
+.adj{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 4px;padding:6px 8px;border-radius:12px;background:var(--card2);font-size:13px;color:var(--muted)}
+.adj button{min-width:60px;height:38px;border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px}
+.adj b{font-size:20px;color:var(--ink);min-width:48px;text-align:center}
+.toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:60;background:var(--exercise);color:#000;font-weight:700;padding:12px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap}
+.toast.pop{animation:pop .35s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes pop{from{transform:translate(-50%,-20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@media (prefers-reduced-motion:reduce){.toast.pop{animation:none}}
+.fld{width:100%;font-size:16px;padding:11px 12px;border-radius:12px;border:0;background:var(--card2);color:var(--ink)}
+.entry{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:8px}
+.entry input{width:100%;padding:11px 10px;border-radius:12px;border:0;background:var(--card2);font-size:17px;text-align:center}
+.syncok{color:var(--ok);font-weight:600}.syncbad{color:var(--warn);font-weight:600}
 </style>
 </head>
 <body>
@@ -278,6 +296,7 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
     <button class="ibtn" id="toSettings" aria-label="الإعدادات"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button></div>
   <button class="pill move block hidden" id="resumeBtn" style="margin-bottom:12px">كمّل التمرينة المفتوحة</button>
   <div class="card" id="ringsCard"></div>
+  <div id="banners"></div>
   <div id="days"></div>
   <div id="histBox"><h2 class="sect-t">آخر التمرينات</h2><div class="grouped" id="histList"></div></div>
 </section>
@@ -333,6 +352,11 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
     <div class="row"><button class="pill gray" id="exportBtn">انسخ النسخة</button><button class="pill gray" id="importBtn">استرجع</button></div>
     <div class="row"><button class="pill gray" id="resetPlans">رجّع التمارين للأصل</button></div>
   </div>
+  <h2 class="sect-t">البرنامج</h2>
+  <div class="card"><label for="progStart">بداية البرنامج (أسبوع 1)</label><input id="progStart" type="date" class="fld">
+    <p class="muted" style="margin:8px 0 0;font-size:14px">8 أسابيع: 7 زيادة وأسبوع ديلود في الآخر.</p></div>
+  <h2 class="sect-t">النسخة الاحتياطية على GitHub</h2>
+  <div class="card" id="syncCard"></div>
   <h2 class="sect-t">التحديثات</h2>
   <div class="card">
     <p class="muted" style="margin-top:0" id="verLbl"></p>
@@ -359,8 +383,10 @@ table.dt td.n{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
 </nav>
 <div id="sheet" class="sheet-bg hidden"></div>
 <div id="tip" class="tip hidden" role="status"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="plan.js"></script>
 <script src="app.js"></script>
 <script src="dash.js"></script>
+<script src="sync.js"></script>
 </body>
 </html>

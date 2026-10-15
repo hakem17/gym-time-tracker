@@ -34,4 +34,6 @@ elif cmd == "decrypt":
     priv = serialization.load_der_private_key(pkcs8, None)
     E = json.load(open(src))
     key = priv.decrypt(ub(E["ek"]), OAEP)
-    print(AESGCM(key).decrypt(ub(E["iv"]), ub(E["ct"]), None)[:120].decode(errors="replace"))
+    pt = AESGCM(key).decrypt(ub(E["iv"]), ub(E["ct"]), None)
+    if len(sys.argv) > 5: open(sys.argv[5], "wb").write(pt)   # decrypt <keys> <pass> <in> <out>
+    else: print(pt[:120].decode(errors="replace"))

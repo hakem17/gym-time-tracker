@@ -232,7 +232,7 @@ function renderProgress(){
   const dayLbl=k=>({push:"Push",pull:"Pull",legs:"Legs"}[k]||k);
   const list=Object.values(EX).filter(e=>!e.abs&&(progDay==="all"||e.day===progDay)).sort((a,b)=>(a.retired-b.retired)||((b.cur.at?.(-1)?.t||0)-(a.cur.at?.(-1)?.t||0)));
   const bestEx=top[0];
-  root.innerHTML=head("التقدم","")+
+  root.innerHTML=head("التقدم",`<button class="pill gray" id="repOpen" style="padding:8px 14px;font-size:14px">تقرير الأسبوع</button>`)+
   (coachState!=="ok"?lockCard("التمرينات القديمة من الشات جوه داتا الكوتش."):"")+
   `<div class="dcard summary"><p>الأسبوع ده عملت <b class="num">${wk.length}</b> تمرينات من 6، وكارديو <b class="num">${wk.filter(cardioDone).length}</b> من 4، وبطن <b class="num">${wk.filter(absDone).length}</b> من 3.</p>
     ${bestEx?`<p>أكتر تمرين اتحسن مؤخراً: <b>${esc(bestEx.name)}</b> <span class="num" dir="ltr">${pct(bestEx.recent)}</span>.</p>`:""}
@@ -249,6 +249,7 @@ function renderProgress(){
     ${skips.length?`<p class="sub" style="margin-top:10px">اتشال الأسبوع ده: ${Object.entries(reasons).map(([r,c])=>`${r} ${c}`).join("، ")}</p>`:""}
   </details>`;
   wireLock(root);
+  const ro=root.querySelector("#repOpen");if(ro)ro.onclick=()=>window.GTT_openReport&&GTT_openReport();
   root.querySelectorAll("#progSeg .chip").forEach(b=>b.onclick=()=>{progDay=b.dataset.k;renderProgress()});
   root.querySelectorAll(".exrow").forEach(b=>b.onclick=()=>{const e=EX[b.dataset.id],box=document.getElementById("ch-"+e.id);
     if(!box.classList.contains("hidden")){box.classList.add("hidden");return}
@@ -259,15 +260,52 @@ function renderProgress(){
     box.querySelector("table").innerHTML=`<tr><th>التاريخ</th><th>الستات</th><th>القيمة</th></tr>`+e.pts.slice().reverse().map(p=>`<tr><td>${shortD(p.t)}</td><td class="n">${esc(setsTxt(p.it.logs,p.it))}</td><td class="n">${r1(p.v)}</td></tr>`).join("")});
 }
 
+/* ---------------- WEEKLY REPORT (text for the chat) ---------------- */
+function weekReport(){
+  const S=allSessions(),EX=exerciseSeries(S),ws=weekStart(),wk=S.filter(h=>h.startedAt>=ws);
+  const card=wk.filter(cardioDone).length,ab=wk.filter(absDone).length;
+  const prs=[],ups=[],flat=[];
+  Object.values(EX).forEach(e=>{if(e.abs)return;const inWk=e.cur.filter(p=>p.t>=ws);if(!inWk.length)return;
+    const before=e.cur.filter(p=>p.t<ws);if(!before.length)return;
+    const best=Math.max(...inWk.map(p=>p.v)),prevMax=Math.max(...before.map(p=>p.v)),last=before[before.length-1].v;
+    if(best>prevMax*1.001)prs.push(e.name);
+    const ch=(best/last-1)*100;(ch>0.5?ups:flat).push(`${e.name} (${pct(ch)})`)});
+  const skips=[];wk.forEach(h=>h.items.forEach(x=>{if((x.timed?!x.done:!(x.logs&&x.logs.length))&&!x.optional&&x.id!=="warmup")skips.push(`${x.name}${x.skip?` (${x.skip})`:""}`)}));
+  const durs=wk.map(sessDur).filter(v=>v!=null);
+  const PB=(typeof D!=="undefined"&&D.body)||{},wa=[...((COACH&&COACH.waist)||[]),...(PB.waist||[])].sort((a,b)=>a.date<b.date?-1:1);
+  const lines=[`تقرير الأسبوع (من ${shortD(ws)})`,`تمرينات: ${wk.length} من 6 • كارديو: ${card} من 4 • بطن: ${ab} من 3`];
+  if(durs.length)lines.push(`متوسط مدة التمرينة: ${hm(Math.round(durs.reduce((a,b)=>a+b,0)/durs.length))}`);
+  if(wa.length)lines.push(`آخر قياس وسط: ${wa[wa.length-1].cm} سم (${shortD(parseD(wa[wa.length-1].date))})`);
+  lines.push("",`أرقام جديدة: ${prs.length?prs.join("، "):"مفيش"}`,`اتحسن: ${ups.length?ups.join("، "):"مفيش"}`,`ثابت أو نزل: ${flat.length?flat.join("، "):"مفيش"}`);
+  if(skips.length)lines.push(`اتشال: ${skips.join("، ")}`);
+  wk.forEach(h=>{lines.push("",`${({push:"Push",pull:"Pull",legs:"Legs"})[h.day]} • ${shortD(h.startedAt)}`);
+    h.items.forEach(x=>{if(x.timed){lines.push(`- ${x.name}: ${x.done?"✅":"❌"}`);return}if(x.logs&&x.logs.length)lines.push(`- ${x.name}: ${setsTxt(x.logs,x)}${x.rir?` (RIR ${x.rir})`:""}`)})});
+  return lines.join("\n");
+}
+window.GTT_weekReport=weekReport;
+
 /* ---------------- BODY ---------------- */
 const AREA={shoulders:"الأكتاف",chest_upper:"أعلى الصدر",chest_mid_lower:"الصدر الأوسط والسفلي",arms_biceps:"البايسبس",arms_triceps:"الترايسبس",
   back_width:"عرض الضهر (اللاتس)",back_lower:"أسفل الضهر",abs_upper:"البطن العلوية",abs_lower_waist:"البطن السفلية والوسط",legs:"الرجل"};
 const LVL={strong:["قوي","strong"],average:["متوسط",""],weak:["ضعيف","weak"],not_visible:["مش باين","na"]};
 function renderBody(){
   const root=document.getElementById("body");
-  if(coachState!=="ok"){root.innerHTML=head("الجسم","")+lockCard("القياسات والصور جايه من شات Body Tracker.");wireLock(root);return}
-  const C=COACH,ib=(C.inbody||[]).slice().sort((a,b)=>a.date<b.date?-1:1),wa=(C.waist||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
-  const wt=(C.weight||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const entry=`<div class="dcard"><h2>سجّل قياس</h2><p class="sub">الوسط عند السرة والوزن، الصبح صايم، مرة في الأسبوع</p>
+    <div class="entry"><div><label for="inWaist">الوسط (سم)</label><input id="inWaist" inputmode="decimal" placeholder="81"></div>
+    <div><label for="inWeight">الوزن (كجم)</label><input id="inWeight" inputmode="decimal" placeholder="77"></div>
+    <button class="pill move" id="inSave" style="padding:12px 16px">حفظ</button></div><p class="flag" id="inMsg" style="margin:8px 0 0"></p></div>`;
+  const wireEntry=()=>{const b=document.getElementById("inSave");if(!b)return;b.onclick=()=>{
+    const w=parseFloat(document.getElementById("inWaist").value.replace(",",".")),k=parseFloat(document.getElementById("inWeight").value.replace(",","."));
+    if(!(w>40&&w<200)&&!(k>30&&k<250)){document.getElementById("inMsg").textContent="اكتب الوسط أو الوزن الأول.";return}
+    const d=dkey(Date.now());D.body=D.body||{};
+    const put=(key,obj)=>{const a=(D.body[key]=D.body[key]||[]).filter(x=>x.date!==d);a.push(obj);D.body[key]=a.sort((x,y)=>x.date<y.date?-1:1)};
+    if(w>40&&w<200)put("waist",{date:d,cm:w,note:"من التطبيق"});if(k>30&&k<250)put("weight",{date:d,kg:k,source:"scale",note:"من التطبيق"});
+    save();try{window.GTT_queueSync&&GTT_queueSync()}catch(e){};renderBody()}};
+  if(coachState!=="ok"){root.innerHTML=head("الجسم","")+entry+lockCard("القياسات والصور جايه من شات Body Tracker.");wireLock(root);wireEntry();return}
+  const mergeBy=(a,b)=>{const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]).forEach(x=>m.set(x.date,x));return[...m.values()].sort((x,y)=>x.date<y.date?-1:1)};
+  const PB=(typeof D!=="undefined"&&D.body)||{};
+  const C=COACH,ib=(C.inbody||[]).slice().sort((a,b)=>a.date<b.date?-1:1),wa=mergeBy(C.waist,PB.waist);
+  const wt=mergeBy(C.weight,PB.weight);
   const clean=ib.filter(x=>x.clean),lastIb=clean[clean.length-1]||ib[ib.length-1];
   const tile=(k,v,u,d)=>`<div class="kpi"><div class="k">${k}</div><div class="v num">${v??"—"}<small> ${u}</small></div>${d?`<div class="d">${d}</div>`:""}</div>`;
   const wD=wa.length>1?r1(wa[wa.length-1].cm-wa[0].cm):null;
@@ -280,7 +318,7 @@ function renderBody(){
     ${tile("الدهون",lastIb?lastIb.fat_pct:null,"%",lastIb?`InBody ${shortD(parseD(lastIb.date))}`:"")}
     ${tile("العضل",lastIb?lastIb.smm:null,"كجم","Skeletal Muscle")}
     ${tile("الوسط",wa.length?wa[wa.length-1].cm:null,"سم",wD!=null?`<span dir="ltr">${wD>0?"+":""}${wD}</span> سم من ${shortD(parseD(wa[0].date))}`:"")}</div>`+
-  `<div class="dcard"><h2>الوسط</h2><p class="sub">لو بينزل، يبقى الدهون بتنزل</p><div class="chart" id="cWaist"></div></div>`+
+  entry+`<div class="dcard"><h2>الوسط</h2><p class="sub">لو بينزل، يبقى الدهون بتنزل</p><div class="chart" id="cWaist"></div></div>`+
 
   (latest?`<div class="dcard"><h2>العضلات من الصور</h2><p class="sub">تقييم بالعين يوم ${shortD(parseD(latest.date))}</p>
     <div class="pair" style="margin-bottom:8px"><div class="callout"><div class="k">الأقوى</div>${areas.filter(([,a])=>a.level==="strong").map(([k])=>`<b>${AREA[k]||k}</b>`).join("")||"—"}</div>
@@ -299,6 +337,7 @@ function renderBody(){
   lineChart(document.getElementById("cFat"),ib.map(x=>pt(x.date,x.fat_pct,`<b>${shortD(parseD(x.date))}</b><br>${x.fat_pct}% (${x.fat_kg} كجم)${x.clean?"":"<br>مش نضيف: بعد تمرين"}`,!x.clean)),{label:"الدهون"});
   lineChart(document.getElementById("cSmm"),ib.map(x=>pt(x.date,x.smm,`<b>${shortD(parseD(x.date))}</b><br>${x.smm} كجم${x.clean?"":"<br>مش نضيف: بعد تمرين"}`,!x.clean)),{label:"العضل"});
   lineChart(document.getElementById("cWt"),wt.map(x=>pt(x.date,x.kg,`<b>${shortD(parseD(x.date))}</b><br>${x.kg} كجم${x.note?`<br>${esc(x.note)}`:""}`,x.source==="inbody"&&ib.some(i=>i.date===x.date&&!i.clean))),{label:"الوزن"});};
+  wireEntry();
   const more=document.getElementById("ibMore");more.addEventListener("toggle",()=>{if(more.open)drawIb()});
 }
 

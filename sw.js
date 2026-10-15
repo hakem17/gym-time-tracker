@@ -1,6 +1,6 @@
 // Network-first for the page (so new targets arrive), cache fallback for offline gym use.
-const CACHE = "gtt-2026-10-16a";
-const ASSETS = ["./", "./index.html", "./plan.js", "./app.js", "./dash.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
+const CACHE = "gtt-2026-10-16b";
+const ASSETS = ["./", "./index.html", "./plan.js", "./app.js", "./dash.js", "./sync.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {
