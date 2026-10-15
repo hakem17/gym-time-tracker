@@ -353,4 +353,17 @@ $("restartBtn").onclick=()=>{const S=A();if(!S)return;
 ["w","r"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();id==="w"?$("r").focus():doneSet()}}));
 
 if(D.active){show("session");renderSession();wake()}else{show("home");renderHome()}
-if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+const BUILD="2026-10-15e";
+if("serviceWorker" in navigator&&location.protocol==="https:"){
+  // a new version takes over → reload once so the new files show right away
+  let reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloaded||D.active)return;reloaded=true;location.reload()});
+  window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{})});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{})});
+}
+async function hardRefresh(){
+  try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}catch(e){}
+  try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
+  location.replace(location.pathname+"?v="+Date.now());
+}
+$("verLbl").textContent=`النسخة ${BUILD} • الأهداف ${PLAN_VER}`;
+$("hardRefresh").onclick=hardRefresh;
