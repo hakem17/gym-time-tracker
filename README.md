@@ -1,4 +1,4 @@
-# Gym Time Tracker
+# Rep (formerly Gym Time Tracker)
 
 Installable web app (PWA): rest timer, set logging, session summaries, and a dashboard (progress, body, food).
 

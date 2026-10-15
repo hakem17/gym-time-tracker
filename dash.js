@@ -1,4 +1,4 @@
-/* Gym Time Tracker — dashboard: progress, body, food.
+/* Rep — dashboard: progress, body, food.
    Workout sets come from this phone (D.history) plus the coach's history file.
    Body, photos and food come only from the coach file, which is encrypted (data.enc.json):
    the coach encrypts with the public key in keys.json; only your passphrase opens it. */

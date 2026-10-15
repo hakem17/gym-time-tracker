@@ -1,7 +1,7 @@
 {
-  "name": "Gym Time Tracker",
-  "short_name": "Gym Time",
-  "description": "تايمر الراحة وتسجيل الأوزان وملخص التمرينة",
+  "name": "Rep — تمرين وجسم وأكل",
+  "short_name": "Rep",
+  "description": "سجّل تمرينك وتابع جسمك وأكلك في مكان واحد",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
