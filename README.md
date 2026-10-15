@@ -10,3 +10,7 @@ Installable web app (PWA): rest timer, set logging, session summaries, and a das
   Updating the data needs only the public key: `python3 tools/crypt.py encrypt keys.json data.json data.enc.json`.
   Never commit the plaintext `data.json`.
 - `sync.js` — optional backup: with a fine-grained token (Contents: read/write on this repo only) saved in Settings, the phone uploads its log encrypted to `logs/phone.enc.json` after each workout. Read it with `python3 tools/crypt.py decrypt keys.json "<passphrase>" logs/phone.enc.json out.json`.
+- `updates/` — coach updates added later without the passphrase: `python3 tools/add_update.py patch.json "label"` encrypts the patch with `keys.json` and lists it in `updates/index.json`; the app merges them on top of `data.enc.json`.
+
+## When to push (owner's rule)
+Push only when: a food day is closed in Calorie Tracker; a progress photo, body weight or waist measurement is sent; or something in the workout chat is worth uploading (e.g. new targets after a workout). Never push from Meal Tracker. Not on every message.

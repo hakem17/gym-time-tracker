@@ -41,8 +41,20 @@ async function loadCoach(){
   if(cached&&!COACH){try{COACH=JSON.parse(cached);coachState="ok"}catch(e){}}
   try{
     const enc=await getJSON("data.enc.json");
-    COACH=await decryptData(ub(pk),enc);coachState="ok";ls.set(CK,JSON.stringify(COACH));
+    const base=await decryptData(ub(pk),enc);
+    // coach updates added later (each encrypted on its own) are merged on top, oldest first
+    let idx=[];try{idx=await getJSON("updates/index.json")}catch(e){}
+    for(const u of idx){try{mergeUpdate(base,await decryptData(ub(pk),await getJSON("updates/"+u.file)))}catch(e){}}
+    COACH=base;coachState="ok";ls.set(CK,JSON.stringify(COACH));
   }catch(e){if(!COACH){coachState="error";coachErr="مقدرتش أحمّل الداتا. اتأكد إنك على النت."}}
+}
+function mergeUpdate(base,u){
+  const byDate=(a,b)=>{const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]).forEach(x=>m.set(x.date,{...(m.get(x.date)||{}),...x}));return[...m.values()].sort((x,y)=>x.date<y.date?-1:1)};
+  ["inbody","waist","weight","physique"].forEach(k=>{if(u[k])base[k]=byDate(base[k],u[k])});
+  if(u.nutrition){base.nutrition=base.nutrition||{};if(u.nutrition.days)base.nutrition.days=byDate(base.nutrition.days,u.nutrition.days);if(u.nutrition.targets)base.nutrition.targets=u.nutrition.targets}
+  if(u.workouts){const key=h=>h.day+"|"+dkey(h.startedAt),m=new Map((base.workouts||[]).map(h=>[key(h),h]));u.workouts.forEach(h=>m.set(key(h),h));base.workouts=[...m.values()].sort((a,b)=>a.startedAt-b.startedAt)}
+  if(u.baselines){base.baselines=base.baselines||{};Object.entries(u.baselines).forEach(([k,v])=>{base.baselines[k]=[...new Set([...(base.baselines[k]||[]),...v])]})}
+  if(u.updated)base.updated=u.updated;
 }
 async function unlockWith(pass){
   coachState="loading";rerender();
