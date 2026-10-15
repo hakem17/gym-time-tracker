@@ -85,5 +85,12 @@ function render(){
 }
 window.GTT_queueSync=()=>{if(!ls.get(TK))return;clearTimeout(timer);timer=setTimeout(syncUp,1500)};
 window.addEventListener("online",()=>{if(state==="err")syncUp()});
+/* one-time setup link: …/#gh=<token>. The part after # never leaves the phone; it is saved locally and wiped from the address bar. */
+(function fromLink(){
+  const m=location.hash.match(/^#gh=([A-Za-z0-9_]+)$/);if(!m)return;
+  ls.set(TK,m[1]);history.replaceState(null,"",location.pathname+location.search);
+  try{toast("النسخة الاحتياطية اتشغلت ✓")}catch(e){}
+  setTimeout(syncUp,800);
+})();
 render();
 })();
