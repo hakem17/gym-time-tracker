@@ -67,29 +67,30 @@ function render(){
     :state==="err"?`<p class="syncbad" style="margin:0">${msg}</p>`
     :`<p class="syncok" style="margin:0">شغالة ✓ ${last?`آخر رفع ${new Date(last).toLocaleString("ar-EG",{weekday:"short",hour:"numeric",minute:"2-digit"})}`:""}</p>`;
   c.innerHTML=status+`
-    <details style="margin-top:10px"><summary class="lnk" style="cursor:pointer">${has?"غيّر الـ token":"شغّلها (مرة واحدة)"}</summary>
+    <details style="margin-top:10px"><summary class="link" style="cursor:pointer;list-style:none">${has?"غيّر الـ token":"شغّلها (مرة واحدة)"}</summary>
       <ol style="padding-inline-start:20px;margin:8px 0;font-size:14px;line-height:1.7;color:var(--muted)">
         <li>افتح github.com/settings/personal-access-tokens/new</li>
         <li>Repository access: Only select repositories ← gym-time-tracker</li>
         <li>Permissions ← Contents: Read and write</li>
         <li>Generate، وانسخ الـ token والصقه هنا</li></ol>
       <input id="tokIn" type="password" class="fld" placeholder="github_pat_…" autocomplete="off" style="direction:ltr">
-      <button class="pill move block" id="tokSave" style="margin-top:10px">احفظ وارفع دلوقتي</button>
-      ${has?`<button class="lnk dim" id="tokDel">امسح الـ token</button>`:""}</details>
-    ${has?`<div class="row"><button class="pill gray" id="syncNow">ارفع دلوقتي</button><button class="pill gray" id="syncGet">استرجع من GitHub</button></div>`:""}`;
+      <button class="btn lime block" id="tokSave" style="margin-top:10px">احفظ وارفع دلوقتي</button>
+      ${has?`<button class="link dim" id="tokDel">امسح الـ token</button>`:""}</details>
+    ${has?`<div class="grid2" style="margin-top:12px"><button class="btn ghost" id="syncNow">ارفع دلوقتي</button><button class="btn ghost" id="syncGet">استرجع</button></div>`:""}`;
   const q=id=>document.getElementById(id);
   q("tokSave").onclick=()=>{const v=q("tokIn").value.trim();if(!v)return;ls.set(TK,v);syncUp()};
   if(q("tokDel"))q("tokDel").onclick=()=>{ls.del(TK);state="off";render()};
   if(q("syncNow"))q("syncNow").onclick=syncUp;
   if(q("syncGet"))q("syncGet").onclick=()=>restore(q("syncGet"));
 }
+window.GTT_renderSync=render;
 window.GTT_queueSync=()=>{if(!ls.get(TK))return;clearTimeout(timer);timer=setTimeout(syncUp,1500)};
 window.addEventListener("online",()=>{if(state==="err")syncUp()});
 /* one-time setup link: …/#gh=<token>. The part after # never leaves the phone; it is saved locally and wiped from the address bar. */
 (function fromLink(){
   const m=location.hash.match(/^#gh=([A-Za-z0-9_]+)$/);if(!m)return;
   ls.set(TK,m[1]);history.replaceState(null,"",location.pathname+location.search);
-  try{toast("النسخة الاحتياطية اتشغلت ✓")}catch(e){}
+  try{toast("النسخة الاحتياطية اتشغلت ✓","ok")}catch(e){}
   setTimeout(syncUp,800);
 })();
 render();
