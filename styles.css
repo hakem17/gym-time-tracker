@@ -45,7 +45,7 @@ tr.pop input{animation:flashok .6s ease}
 @keyframes chkpop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes flashok{0%{background:rgba(184,242,58,.4)}100%{background:var(--lime-soft)}}
 .ex.opening .ex-body,.ex.opening .ex-media{animation:rise .35s var(--ease) both}
-.ex.opening .ex-media img{animation:zoomin .6s var(--ease) both}
+.ex.opening .ex-media img:not(.f2){animation:zoomin .6s var(--ease) both}
 @keyframes zoomin{from{transform:scale(1.08)}to{transform:none}}
 .ex.cur{transition:border-color .3s,box-shadow .3s}
 .hero img{animation:kb 18s ease-in-out infinite alternate}
@@ -166,7 +166,11 @@ details.more[open]>*:not(summary){animation:rise .3s var(--ease) both}
 .ex-prog.done{color:var(--lime)}
 .ex-media{position:relative;aspect-ratio:16/9;background:var(--s2)}
 .ex-media img{width:100%;height:100%;object-fit:cover}
-.ex-media .flip{position:absolute;bottom:10px;left:10px;width:auto}
+.ex-media .flip{position:absolute;top:10px;left:10px;width:40px;height:40px;padding:0;justify-content:center;z-index:2;background:rgba(14,16,19,.7);backdrop-filter:blur(6px)}
+/* two public-domain frames (start/end of the rep) looped like a GIF */
+.ex-media img.f2{position:absolute;inset:0;opacity:0;animation:repframe 2.6s ease-in-out infinite}
+.ex-media.still img.f2{animation:none;opacity:0}
+@keyframes repframe{0%,38%{opacity:0}50%,88%{opacity:1}100%{opacity:0}}
 .ex-media::after{content:"";position:absolute;inset:auto 0 0 0;height:50%;background:linear-gradient(to top,rgba(22,25,29,.95),transparent)}
 .ex-media .cap{position:absolute;inset:auto 14px 10px 14px;z-index:1}
 .ex-media .cap h3{font-size:19px;font-weight:800}
@@ -296,3 +300,5 @@ details.more summary::-webkit-details-marker{display:none}
 @keyframes pop{from{transform:translate(-50%,-20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 @media (prefers-reduced-motion:reduce){.toast.pop{animation:none}}
 .syncok{color:var(--lime);font-weight:600}.syncbad{color:var(--warn);font-weight:600}
+
+a.tool{color:var(--ink);text-decoration:none}

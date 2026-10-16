@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{absA:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-16h";
+const BUILD="2026-10-16i";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 
@@ -54,7 +54,8 @@ const e1=(w,r)=>{w=parseFloat(w);r=parseFloat(r);return w>0&&r>0?w*(1+r/30):0};
 function bestEver(id,before=Infinity){let m=0;histAll().forEach(h=>{if(h.startedAt>=before)return;h.items.forEach(x=>{if(x.id===id&&x.logs)x.logs.forEach(l=>{m=Math.max(m,e1(l.w,l.r))})})});return m}
 function stepFor(it,w){w=parseFloat(w)||0;if(it.unit==="بلطات"&&w<=30)return 1;if((it.unit==="بلطات"||it.unit==="باوند")&&w>=60)return 10;return 2.5}
 const baseId=id=>String(id||"").replace(/_alt\d+$/,"");
-const media=id=>(typeof EXMEDIA!=="undefined"&&EXMEDIA[baseId(id)])||null;
+const media=id=>/_alt\d+$/.test(String(id))?null:((typeof EXMEDIA!=="undefined"&&EXMEDIA[baseId(id)])||null);
+const videoOf=it=>{const m=media(it.id);return m&&m.video?m.video:"https://www.youtube.com/results?search_query="+encodeURIComponent(it.name+" proper form")};
 const imgOf=(id,k=0)=>{const m=media(id);return m&&m.img[k]?m.img[k]:(m&&m.img[0])||""};
 const IMG=(src,alt,cls="")=>src?`<img src="${src}" alt="${esc(alt)}" class="${cls}" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">`:"";
 const ICON={
@@ -62,7 +63,8 @@ const ICON={
   info:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
   swap:'<svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>',
   undo:'<svg viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 0 1 0 10h-3"/></svg>',
-  check:'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  check:'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg>'
 };
 
 /* ================= sound / vibration / screen ================= */
@@ -198,7 +200,8 @@ function exClosed(it,i,isCur){
 function exOpen(it,i,isCur){
   const m=media(it.id),X=(typeof EXTRA!=="undefined"&&EXTRA[baseId(it.origId||it.id)])||{};
   const mus=m?[...m.muscles,...m.muscles2.slice(0,2)]:[];
-  const head=m?`<div class="ex-media">${IMG(imgOf(it.id),it.name)}<div class="cap"><h3>${esc(it.name)}</h3></div>${m.img[1]?`<button class="tool flip" data-flip="${i}" aria-label="الصورة التانية">${ICON.swap}الحركة</button>`:""}</div>`
+  const anim=m&&m.img[1];
+  const head=m?`<div class="ex-media${anim?" anim":""}">${IMG(m.img[0],it.name+": بداية الحركة")}${anim?IMG(m.img[1],it.name+": نهاية الحركة","f2"):""}<div class="cap"><h3>${esc(it.name)}</h3></div>${anim?`<button class="tool flip" data-anim="${i}" aria-pressed="false" aria-label="وقّف الحركة"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg></button>`:""}</div>`
     :`<div class="ex-body" style="padding-bottom:0"><h3 style="font-size:19px;font-weight:800">${esc(it.name)}</h3></div>`;
   if(it.timed)return`<div class="ex${isCur?" cur":""}" id="ex${i}">${head}<div class="ex-body">
       ${it.note?`<div class="hintl">${esc(it.note)}</div>`:""}
@@ -215,7 +218,7 @@ function exOpen(it,i,isCur){
       <div><div class="k">المطلوب</div><div class="v num">${it.sets}×${it.lo}–${it.hi}</div></div><div><div class="k">الراحة</div><div class="v num">${fmt(it.rest||90)}</div></div></div>
     ${it.target?`<div class="goal">الهدف: ${esc(it.target)}</div>`:""}
     ${h||it.left?`<div class="hintl">${[h,it.left?"ابدأ بالشمال":""].filter(Boolean).join(" • ")}</div>`:""}
-    <div class="tools">${X.cues?`<button class="tool" data-cue="${i}">${ICON.info}طريقة الأداء</button>`:""}${X.alts&&X.alts.length&&!nd?`<button class="tool" data-busy="${i}">${ICON.swap}الجهاز مشغول</button>`:""}${it.origId&&!nd?`<button class="tool" data-orig="${i}">${ICON.undo}رجّع الأصلي</button>`:""}</div>
+    <div class="tools"><a class="tool" href="${esc(videoOf(it))}" target="_blank" rel="noopener">${ICON.play}فيديو الأداء</a>${X.cues?`<button class="tool" data-cue="${i}">${ICON.info}طريقة الأداء</button>`:""}${X.alts&&X.alts.length&&!nd?`<button class="tool" data-busy="${i}">${ICON.swap}الجهاز مشغول</button>`:""}${it.origId&&!nd?`<button class="tool" data-orig="${i}">${ICON.undo}رجّع الأصلي</button>`:""}</div>
     ${X.cues?`<div class="drawer hidden" id="cue${i}">${esc(X.cues)}</div>`:""}
     ${X.alts&&X.alts.length?`<div class="chips hidden" id="alt${i}" style="margin-top:8px"><span class="muted" style="font-size:13px">بدّله بـ</span>${X.alts.map((a,k)=>`<button class="chip" data-alt="${i}" data-k="${k}">${esc(a)}</button>`).join("")}</div>`:""}
     ${it.skip?`<div class="hintl" style="margin-top:8px">اتعدّى: ${esc(it.skip)} <button class="link" data-unskip="${i}">رجّعه</button></div>`:`
@@ -236,7 +239,7 @@ function wireSession(){
   q("input[data-f]").forEach(inp=>{inp.addEventListener("input",()=>{const r=S.items[+inp.dataset.i].rows[+inp.dataset.j];r[inp.dataset.f]=inp.value.trim();r.touched=true;inp.style.borderColor="";save()});
     inp.addEventListener("focus",()=>inp.select())});
   q(".chk").forEach(b=>b.onclick=()=>toggleSet(+b.dataset.i,+b.dataset.j));
-  q("[data-flip]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.flip],img=$("ex"+b.dataset.flip).querySelector(".ex-media img"),m=media(it.id);if(!img||!m)return;const k=img.getAttribute("src")===m.img[0]?1:0;img.src=m.img[k]||m.img[0]});
+  q("[data-anim]").forEach(b=>b.onclick=()=>{const box=b.closest(".ex-media"),still=box.classList.toggle("still");b.innerHTML=still?'<svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg>';b.setAttribute("aria-pressed",still);b.setAttribute("aria-label",still?"شغّل الحركة":"وقّف الحركة")});
   q("[data-add]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.add],l=it.rows[it.rows.length-1];it.rows.push({w:l?l.w:"",r:l?l.r:"",done:false});save();renderSession()});
   q("[data-rir]").forEach(b=>b.onclick=()=>{S.items[+b.dataset.rir].rir=b.dataset.v;save();renderSession()});
   q("[data-skip]").forEach(b=>b.onclick=()=>{const i=+b.dataset.skip,box=$("sk"+i);
