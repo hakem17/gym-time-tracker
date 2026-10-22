@@ -310,3 +310,10 @@ a.tool{color:var(--ink);text-decoration:none}
 .rirbox.need{box-shadow:inset 0 0 0 1.5px var(--lime);animation:rise .3s var(--ease)}
 .whead .meta #status{color:var(--ink);font-weight:600}
 .whead .meta #status.late{color:var(--warn)}
+
+/* time fit notice in the workout picker */
+.fit{margin:2px 0 4px;padding:12px 14px;border-radius:var(--r-md);font-size:14px;line-height:1.6;background:var(--s1)}
+.fit.ok{color:var(--muted)}
+.fit.warn{box-shadow:inset 0 0 0 1.5px var(--warn)}
+.fit.bad{box-shadow:inset 0 0 0 1.5px var(--pink)}
+.fit b{color:var(--ink)}

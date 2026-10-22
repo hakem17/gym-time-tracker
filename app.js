@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{absA:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-22a";
+const BUILD="2026-10-22b";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -135,7 +135,7 @@ const A=()=>D.active;
 const doneRows=it=>(it.rows||[]).filter(r=>r.done);
 const isDone=it=>it.timed?(it.done||!!it.skip):(!!it.skip||doneRows(it).length>=it.sets);
 const curIndex=()=>A().items.findIndex(x=>!isDone(x));
-let pickedDay=null,pickedExtras=null,pickedBudget=120,justDone=null,justOpened=null;
+let pickedDay=null,pickedExtras=null,pickedBudget=120,pickedFit=true,justDone=null,justOpened=null;
 
 function defaultRows(x){const L=lastFor(x.id),prev=L?L.it.logs:[];
   return Array.from({length:x.sets},(_,j)=>{const p=prev[j]||prev[prev.length-1];return{w:p?p.w:"",r:p?p.r:"",done:false}})}
@@ -158,25 +158,96 @@ function renderPicker(){
     <div class="sec"><h2>الإضافات</h2></div>
     <div class="opts" style="margin-top:0">${Object.keys(names).map(k=>`<button class="opt" data-k="${k}" role="switch" aria-checked="${!!pickedExtras[k]}"><span>${names[k]}</span><span class="sw"></span></button>`).join("")}</div>
     <div class="muted" style="font-size:14px;margin:4px 2px;display:flex;justify-content:space-between"><span>مدة التمرينة</span><b id="outAt" style="color:var(--lime)">لو بدأت دلوقتي هتخرج ${clock(Date.now()+pickedBudget*60000)}</b></div>
-    <div class="seg">${[[75,"1:15"],[90,"1:30"],[105,"1:45"],[120,"2:00"]].map(([v,l])=>`<button data-b="${v}" aria-pressed="${pickedBudget===v}"><span class="num">${l}</span></button>`).join("")}</div>
+    <div class="seg">${[[75,"1:15"],[90,"1:30"],[105,"1:45"],[120,"2:00"],[135,"2:15"],[150,"2:30"]].map(([v,l])=>`<button data-b="${v}" aria-pressed="${pickedBudget===v}"><span class="num">${l}</span></button>`).join("")}</div>
+    <div id="fitBox"></div>
     <button class="btn lime block" id="startBtn">ابدأ ${DAYS[pickedDay].t}</button>`;
   root.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{pickedDay=b.dataset.day;renderPicker()});
-  root.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{pickedExtras[o.dataset.k]=!pickedExtras[o.dataset.k];o.setAttribute("aria-checked",pickedExtras[o.dataset.k])});
-  root.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{pickedBudget=+b.dataset.b;$("outAt").textContent=`لو بدأت دلوقتي هتخرج ${clock(Date.now()+pickedBudget*60000)}`;root.querySelectorAll("[data-b]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  root.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{pickedExtras[o.dataset.k]=!pickedExtras[o.dataset.k];o.setAttribute("aria-checked",pickedExtras[o.dataset.k]);renderFit()});
+  renderFit();
+  root.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{pickedBudget=+b.dataset.b;renderFit();$("outAt").textContent=`لو بدأت دلوقتي هتخرج ${clock(Date.now()+pickedBudget*60000)}`;root.querySelectorAll("[data-b]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
   $("startBtn").onclick=startSession;
+}
+function renderFit(){
+  const box=$("fitBox");if(!box)return;
+  const items=buildItems(pickedDay,pickedExtras),F=planFit(items,pickedBudget),P=D.plans[pickedDay];
+  const rs=[...new Set(P.filter(x=>!x.optional).map(x=>x.rest||90))].sort((a,b)=>b-a);
+  let html;
+  if(F.fits)html=`<div class="fit ok">التمرينة دي محتاجة حوالي <b class="num">${hm(F.need)}</b>، والوقت اللي اخترته كفاية.</div>`;
+  else if(F.possible)html=`<div class="fit warn"><b>الوقت قصير على التمرينة دي.</b> محتاجة حوالي <b class="num">${hm(F.need)}</b> بالراحة المكتوبة، وانت اخترت <b class="num">${hm(pickedBudget)}</b>.
+      <div style="margin-top:6px">لو كمّلت، هقلل الراحة عشان تلحق: ${rs.map(r=>`<span class="num">${fmt(r)}</span> ← <span class="num">${fmt(fitRest(r,F.f))}</span>`).join("، ")}</div></div>`;
+  else html=`<div class="fit bad"><b>مش هتلحق حتى بأقل راحة.</b> محتاجة حوالي <b class="num">${hm(F.need)}</b>، وأقل حاجة ممكنة <b class="num">${hm(F.minNeed)}</b> (راحة 1:30 للتقيل و0:45 للصغير). ${(()=>{const on=[pickedExtras.cardio&&"المشاية",(pickedExtras.absA||pickedExtras.absB)&&"البطن"].filter(Boolean);return on.length?`شيل ${on.join(" أو ")}، أو اختار وقت أطول.`:"اختار وقت أطول."})()}</div>`;
+  box.innerHTML=html+(F.fits?"":`<button class="opt" id="fitTg" role="switch" aria-checked="${pickedFit}" style="background:var(--s1);border-radius:var(--r-md);margin-top:8px"><span>قلل الراحة عشان أخرج في ميعادي</span><span class="sw"></span></button>`);
+  const t=$("fitTg");if(t)t.onclick=()=>{pickedFit=!pickedFit;t.setAttribute("aria-checked",pickedFit)};
 }
 function startWorkoutFor(day){pickedDay=day;pickedExtras=null;go("workout")}
 window.GTT_startWorkoutFor=startWorkoutFor;
 
+function buildItems(day,ex){
+  const dl=isDeload(),mk=x=>{const y={...x};if(dl){y.sets=Math.max(1,Math.ceil(x.sets/2));y.target="ديلود: نفس وزن آخر مرة، ووقف وفاضلك 3 عدات"}return{...y,rows:defaultRows(y),rir:""}};
+  const items=D.plans[day].map(mk);
+  if(ex.warmup){const wu=D.plans.warmup||DEFAULTS.warmup;items.unshift({id:"warmup",name:"تسخين",timed:true,minutes:+wu.minutes||5,note:wu.note,done:false})}
+  if(ex.cardio)items.push({id:"cardio",name:"مشاية إنكلاين",timed:true,minutes:+D.plans.cardio.minutes||20,note:D.plans.cardio.note,done:false});
+  if(ex.absA)D.plans.absA.forEach(x=>items.push({...mk(x),abs:true}));
+  if(ex.absB)D.plans.absB.forEach(x=>items.push({...mk(x),abs:true}));
+  return items;
+}
+
+/* ===== time planning =====
+   A workout = work (≈45 s a set) + rest between sets (from the plan) + changeover between exercises
+   (walking, setting up the machine) + timed blocks. The changeover is learnt from your own finished
+   workouts, so the estimate follows your real pace. When time is short, rests shrink — but never
+   below a floor (1:30 for heavy lifts, 1:00 for medium, 0:45 for small ones). */
+const WORK_S=45;
+const restFloor=r=>r>=120?90:r>=90?60:45;
+const r15=x=>Math.round(x/15)*15;
+function changeoverS(){
+  const xs=[];D.history.slice(-8).forEach(h=>{if(!h.finishedAt||h.source==="chat")return;
+    let work=0,rest=0,timed=0,n=0;
+    h.items.forEach(x=>{if(x.timed){if(x.done)timed+=(x.minutes||0)*60;return}const k=(x.logs||[]).length;if(!k)return;
+      const p=planInfo2(x.id);n++;work+=k*WORK_S;rest+=(k-1)*((p&&p.rest)||90)});
+    if(n>=3){const c=((h.finishedAt-h.startedAt)/1000-work-rest-timed)/n;xs.push(c)}});
+  if(!xs.length)return 150;
+  xs.sort((a,b)=>a-b);return Math.min(300,Math.max(90,xs[Math.floor(xs.length/2)]));
+}
+function planInfo2(id){for(const k of ["push","pull","legs","absA","absB"]){const x=(D.plans[k]||[]).find(e=>e.id===baseId(id));if(x)return x}return null}
+/* remaining time parts for a list of items (skips optional ones you haven't started) */
+function timeParts(items,co){
+  let fixed=0;const rests=[];
+  items.forEach(it=>{if(isDone(it))return;
+    if(it.timed){fixed+=it.minutes*60;return}
+    const done=doneRows(it).length;if(it.optional&&!done)return;
+    const left=Math.max(0,it.sets-done);if(!left)return;
+    fixed+=left*WORK_S+(done?0:co);
+    const n=done?left:left-1;for(let k=0;k<n;k++)rests.push(it.rest||90)});
+  return{fixed,rests};
+}
+/* scale every rest by the same factor so the total fits; floors stop it going too low */
+function fitScale(rests,avail){
+  const tot=f=>rests.reduce((a,r)=>a+Math.max(restFloor(r),r*f),0);
+  if(tot(1)<=avail)return 1;
+  if(tot(0)>avail)return 0;
+  let lo=0,hi=1;for(let k=0;k<30;k++){const m=(lo+hi)/2;if(tot(m)>avail)hi=m;else lo=m}return lo;
+}
+const fitRest=(r,f)=>f>=1?r:Math.max(restFloor(r),r15(r*f));
+function planFit(items,budgetMin){
+  const co=changeoverS(),{fixed,rests}=timeParts(items,co),restSum=rests.reduce((a,b)=>a+b,0);
+  const need=Math.round((fixed+restSum)/60),avail=budgetMin*60-fixed,f=fitScale(rests,avail);
+  const minNeed=Math.round((fixed+rests.reduce((a,r)=>a+restFloor(r),0))/60);
+  return{need,minNeed,f,fits:need<=budgetMin,possible:minNeed<=budgetMin};
+}
+/* live: rest for the set you just finished, so you still leave at your exit time */
+function restFor(it){
+  const S=A(),base=it.rest||90;if(!S||S.fit===false)return base;
+  const left=(S.startedAt+S.budget*60000-Date.now())/1000,{fixed,rests}=timeParts(S.items,changeoverS());
+  // mid-exercise, this rest is already among `rests`; after the last set it is the extra gap before the next exercise
+  const all=doneRows(it).length<it.sets?rests:[base,...rests];
+  return fitRest(base,fitScale(all,left-fixed));
+}
+
 function startSession(){
   unlock();
-  const dl=isDeload(),mk=x=>{const y={...x};if(dl){y.sets=Math.max(1,Math.ceil(x.sets/2));y.target="ديلود: نفس وزن آخر مرة، ووقف وفاضلك 3 عدات"}return{...y,rows:defaultRows(y),rir:""}};
-  const items=D.plans[pickedDay].map(mk);
-  if(pickedExtras.warmup){const wu=D.plans.warmup||DEFAULTS.warmup;items.unshift({id:"warmup",name:"تسخين",timed:true,minutes:+wu.minutes||5,note:wu.note,done:false})}
-  if(pickedExtras.cardio)items.push({id:"cardio",name:"مشاية إنكلاين",timed:true,minutes:+D.plans.cardio.minutes||20,note:D.plans.cardio.note,done:false});
-  if(pickedExtras.absA)D.plans.absA.forEach(x=>items.push({...mk(x),abs:true}));
-  if(pickedExtras.absB)D.plans.absB.forEach(x=>items.push({...mk(x),abs:true}));
-  D.active={v2:true,day:pickedDay,startedAt:Date.now(),budget:pickedBudget,items,rest:null,open:null};
+  const items=buildItems(pickedDay,pickedExtras);
+  D.active={v2:true,day:pickedDay,startedAt:Date.now(),budget:pickedBudget,fit:pickedFit,items,rest:null,open:null};
   save();wake();renderWorkout();window.scrollTo(0,0);
 }
 
@@ -216,7 +287,7 @@ function exOpen(it,i,isCur){
   return`<div class="ex${isCur?" cur":""}${justOpened===i?" opening":""}" id="ex${i}">${head}<div class="ex-body">
     ${mus.length?`<div class="muscles">${mus.map((x,k)=>`<span class="tag${k<m.muscles.length?" lime":""}">${esc(x)}</span>`).join("")}${it.unit&&it.unit!=="كجم"?`<span class="tag">${esc(it.unit)}</span>`:""}</div>`:""}
     <div class="kv"><div><div class="k">آخر مرة</div><div class="v num">${bestPrev.r?(bestPrev.w?`${esc(bestPrev.w)}×${esc(bestPrev.r)}`:esc(bestPrev.r)):"—"}</div></div>
-      <div><div class="k">المطلوب</div><div class="v num">${it.sets}×${it.lo}–${it.hi}</div></div><div><div class="k">الراحة</div><div class="v num">${fmt(it.rest||90)}</div></div></div>
+      <div><div class="k">المطلوب</div><div class="v num">${it.sets}×${it.lo}–${it.hi}</div></div><div><div class="k">الراحة${(()=>{const r=restFor(it);return r<(it.rest||90)?' <span class="tag lime" style="font-size:10px">مختصرة</span>':""})()}</div><div class="v num">${fmt(restFor(it))}</div></div></div>
     ${it.target?`<div class="goal">الهدف: ${esc(it.target)}</div>`:""}
     ${h||it.left?`<div class="hintl">${[h,it.left?"ابدأ بالشمال":""].filter(Boolean).join(" • ")}</div>`:""}
     <div class="tools"><a class="tool" href="${esc(videoOf(it))}" target="_blank" rel="noopener">${ICON.play}فيديو الأداء</a>${X.cues?`<button class="tool" data-cue="${i}">${ICON.info}طريقة الأداء</button>`:""}${X.alts&&X.alts.length&&!nd?`<button class="tool" data-busy="${i}">${ICON.swap}الجهاز مشغول</button>`:""}${it.origId&&!nd?`<button class="tool" data-orig="${i}">${ICON.undo}رجّع الأصلي</button>`:""}</div>
@@ -264,7 +335,7 @@ function wireSession(){
     it.rows.forEach(r=>{if(!r.done){if(!r.r){bad=true;return}r.done=true;r.t=Date.now()}});
     const askRir=!bad&&!it.rir&&!it.abs&&!it.seconds;
     if(!bad)checkPR(it);S.open=askRir?i:null;save();renderSession();
-    if(!bad){if(S.items.some(x=>!isDone(x))){const nx=S.items[curIndex()];startRest(it.rest||90,`راحة • الجاي: ${nx?nx.name:""}`);if(!askRir)focusCurrent()}}});
+    if(!bad){if(S.items.some(x=>!isDone(x))){const nx=S.items[curIndex()];startRest(restFor(it),`راحة • الجاي: ${nx?nx.name:""}`);if(!askRir)focusCurrent()}}});
   const fin=btn=>()=>{if(armed(btn,"اضغط تاني للإنهاء"))endSession()};
   $("finishBtn").onclick=fin($("finishBtn"));$("finishBtn2").onclick=fin($("finishBtn2"));
   $("restartBtn").onclick=()=>{if(!armed($("restartBtn"),"اضغط تاني: هتتمسح ومش هتتحفظ"))return;const day=S.day;D.active=null;save();stopRest();try{lock&&lock.release()}catch(e){}pickedDay=day;renderWorkout()};
@@ -279,7 +350,7 @@ function toggleSet(i,j){
   const left=S.items.some(x=>!isDone(x));renderSession();
   if(!left){stopRest();$("finishBtn2").scrollIntoView({behavior:"smooth",block:"center"});return}
   const nx=S.items[curIndex()];
-  startRest(it.rest||90,allDone?`راحة • الجاي: ${nx?nx.name:""}`:`راحة • ${it.name}`);
+  startRest(restFor(it),allDone?`راحة • الجاي: ${nx?nx.name:""}`:`راحة • ${it.name}`);
   if(allDone&&!askRir)focusCurrent();
   if(askRir)setTimeout(()=>{const b=$("ex"+i)&&$("ex"+i).querySelector(".rirbox");b&&b.scrollIntoView({behavior:"smooth",block:"center"})},150);
 }
