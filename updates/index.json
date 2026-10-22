@@ -58,5 +58,10 @@
   "file": "20261022T220501Z.enc.json",
   "label": "Nutrition 2026-10-22 (fasting) + cut targets 1760/165/160/50",
   "at": "20261022T220501Z"
+ },
+ {
+  "file": "20261022T220948Z.enc.json",
+  "label": "Maintenance day 26/10 targets",
+  "at": "20261022T220948Z"
  }
 ]

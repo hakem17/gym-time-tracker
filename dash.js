@@ -56,7 +56,7 @@ async function loadCoach(){
 function mergeUpdate(base,u){
   const byDate=(a,b)=>{const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]).forEach(x=>m.set(x.date,{...(m.get(x.date)||{}),...x}));return[...m.values()].sort((x,y)=>x.date<y.date?-1:1)};
   ["inbody","waist","weight","physique"].forEach(k=>{if(u[k])base[k]=byDate(base[k],u[k])});
-  if(u.nutrition){base.nutrition=base.nutrition||{};if(u.nutrition.days)base.nutrition.days=byDate(base.nutrition.days,u.nutrition.days);if(u.nutrition.targets)base.nutrition.targets=u.nutrition.targets}
+  if(u.nutrition){base.nutrition=base.nutrition||{};if(u.nutrition.days)base.nutrition.days=byDate(base.nutrition.days,u.nutrition.days);if(u.nutrition.targets)base.nutrition.targets=u.nutrition.targets;if(u.nutrition.dayTargets)base.nutrition.dayTargets={...(base.nutrition.dayTargets||{}),...u.nutrition.dayTargets}}
   if(u.workouts){const key=h=>h.day+"|"+dkey(h.startedAt),m=new Map((base.workouts||[]).map(h=>[key(h),h]));u.workouts.forEach(h=>m.set(key(h),h));base.workouts=[...m.values()].sort((a,b)=>a.startedAt-b.startedAt)}
   if(u.baselines){base.baselines=base.baselines||{};Object.entries(u.baselines).forEach(([k,v])=>{base.baselines[k]=[...new Set([...(base.baselines[k]||[]),...v])]})}
   if(u.updated)base.updated=u.updated;
@@ -445,21 +445,23 @@ function renderFood(){
   const N=COACH.nutrition||{},T=N.targets||{};
   const all=(N.days||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
   if(!all.length||!T.kcal){root.innerHTML=hdr("الأكل","")+`<div class="card empty"><b>مفيش أيام أكل متسجلة</b>الأيام بتتسجل في شات Calorie Tracker وبتوصل هنا.</div>`;return}
-  const kT=T.kcal,pT=(T.protein||[0])[0],last=all[all.length-1];
+  const DT=N.dayTargets||{},tg=dt=>{const o=DT[dt]||{};return{kcal:o.kcal||T.kcal,p:(o.protein||T.protein||[0])[0],c:(o.carbs||T.carbs||[0])[0],f:(o.fat||T.fat||[0])[0],m:!!DT[dt]}};
+  const last=all[all.length-1],L=tg(last.date),kT=L.kcal,pT=L.p,todayK=dkey(Date.now()),nextM=Object.keys(DT).filter(k=>k>=todayK).sort()[0];
   const R=UI.foodRange,end=new Date();end.setHours(12,0,0,0);
   const nDays=R||Math.max(1,Math.round((end.getTime()-parseD(all[0].date))/DAY)+1);
   const keys=[];for(let i=nDays-1;i>=0;i--)keys.push(dkey(end.getTime()-i*DAY));
   const map=new Map(all.map(d=>[d.date,d])),days=keys.map(k=>map.get(k)||null);
   const full=days.filter(d=>d&&d.kcal!=null&&!d.partial);
   const avg=f=>full.length?Math.round(full.reduce((a,d)=>a+(d[f]||0),0)/full.length):null;
-  const inBand=full.filter(d=>d.kcal>=kT*.9&&d.kcal<=kT*1.1).length,pHit=full.filter(d=>d.protein>=pT).length;
+  const inBand=full.filter(d=>{const k=tg(d.date).kcal;return d.kcal>=k*.9&&d.kcal<=k*1.1}).length,pHit=full.filter(d=>d.protein>=tg(d.date).p).length;
   const lp=(v,t)=>t?Math.min(100,Math.round(v/t*100)):0;
   const macro=(k,v,t,u)=>`<div><div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">${k}</span><span class="num">${v??"—"} / ${t} ${u}</span></div><div style="height:6px;border-radius:3px;background:var(--s3);margin-top:4px;overflow:hidden"><i style="display:block;height:100%;width:${lp(v||0,t)}%;background:var(--lime);border-radius:3px"></i></div></div>`;
   root.innerHTML=hdr("الأكل","الأيام بتتسجل في شات Calorie Tracker")+
     `<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><b>آخر يوم متسجل</b><span class="muted" style="font-size:13px">${longD(parseD(last.date))}${last.partial?" • لسه مقفلش":""}${last.fasting?" • صيام":""}</span></div>
       <div style="display:flex;gap:16px;align-items:center;margin-top:10px">${ringSVG(last.kcal??0,kT,last.kcal>kT*1.1?"#FFB020":C_LIME).replace('class="ring"','class="ring" style="width:96px;height:96px;margin:0"').replace(/<small class="muted"[^>]*>\/\d+<\/small>/,"")}
-        <div style="flex:1;display:grid;gap:8px">${macro("بروتين",last.protein,pT,"جم")}${macro("كارب",last.carbs,(T.carbs||[0])[0],"جم")}${macro("دهون",last.fat,(T.fat||[0])[0],"جم")}</div></div>
-      <div class="muted" style="font-size:12px;margin-top:6px">الهدف ${kT.toLocaleString("en-US")} سعر</div></div>
+        <div style="flex:1;display:grid;gap:8px">${macro("بروتين",last.protein,pT,"جم")}${macro("كارب",last.carbs,L.c,"جم")}${macro("دهون",last.fat,L.f,"جم")}</div></div>
+      <div class="muted" style="font-size:12px;margin-top:6px">الهدف ${kT.toLocaleString("en-US")} سعر${L.m?" • يوم صيانة":""}</div></div>
+    ${nextM?(()=>{const n=tg(nextM);return`<div class="card" style="margin-top:12px;border-color:${C_LIME}"><b>${nextM===todayK?"النهارده":longD(parseD(nextM))} • يوم صيانة</b><div class="muted" style="font-size:13px;margin-top:4px">سعرات ${n.kcal.toLocaleString("en-US")} • بروتين ${n.p}+ • كارب ${n.c} • دهون ${n.f} جم — مقصود وعالي، مش غلطة.</div></div>`})():""}
     <div style="margin-top:12px">${rangeSeg(R,RANGES)}</div>
     ${full.length?`<div class="grid3"><div class="stat"><div class="k">متوسط السعرات</div><div class="v num" style="font-size:20px">${avg("kcal").toLocaleString("en-US")}</div></div>
       <div class="stat"><div class="k">قريب من الهدف</div><div class="v num" style="font-size:20px">${inBand}/${full.length}</div></div><div class="stat"><div class="k">البروتين وصل</div><div class="v num" style="font-size:20px">${pHit}/${full.length}</div></div></div>`
@@ -467,15 +469,15 @@ function renderFood(){
     <div class="card" style="margin-top:12px"><b>السعرات كل يوم</b><div class="chartbox" id="cK"></div><div class="legend"><span><i></i>جوه ±10% من الهدف</span><span><i style="background:#FFB020"></i>بعيد</span><span><i class="ref"></i>الهدف ${kT.toLocaleString("en-US")}</span></div></div>
     <div class="card" style="margin-top:12px"><b>البروتين كل يوم</b><div class="chartbox sm" id="cP"></div><div class="legend"><span><i class="ref"></i>الهدف ${pT} جم</span></div></div>
     <details class="more"><summary>كل الأيام</summary><table class="dt"><tr><th>اليوم</th><th>سعرات</th><th>بروتين</th><th>كارب</th><th>دهون</th></tr>
-      ${days.filter(Boolean).reverse().map(d=>`<tr><td>${shortD(parseD(d.date))}${d.fasting?" ص":""}${d.partial?" *":""}</td><td class="n">${d.kcal??"—"}</td><td class="n">${d.protein??"—"}</td><td class="n">${d.carbs??"—"}</td><td class="n">${d.fat??"—"}</td></tr>`).join("")}</table>
-      <p class="muted" style="font-size:12px;margin-top:6px">ص = صيام • * = اليوم مقفلش (مش داخل في المتوسط)</p></details>`;
+      ${days.filter(Boolean).reverse().map(d=>`<tr><td>${shortD(parseD(d.date))}${d.fasting?" ص":""}${DT[d.date]?" ⚖":""}${d.partial?" *":""}</td><td class="n">${d.kcal??"—"}</td><td class="n">${d.protein??"—"}</td><td class="n">${d.carbs??"—"}</td><td class="n">${d.fat??"—"}</td></tr>`).join("")}</table>
+      <p class="muted" style="font-size:12px;margin-top:6px">ص = صيام • ⚖ = يوم صيانة (هدفه أعلى) • * = اليوم مقفلش (مش داخل في المتوسط)</p></details>`;
   root.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{UI.foodRange=+b.dataset.r;renderFood()});
   const labels=keys.map(k=>shortD(parseD(k))),tt=i=>longD(parseD(keys[i]))+(days[i]&&days[i].partial?" • مقفلش":"")+(days[i]&&days[i].fasting?" • صيام":"");
   bars("cK",labels,days.map(d=>d&&d.kcal!=null?d.kcal:null),{target:kT,unit:"سعر",titleOf:tt,empty:"مفيش أيام متسجلة في الفترة دي.",
-    colorOf:(v,i)=>days[i]&&days[i].partial?"rgba(155,163,174,.5)":(v>=kT*.9&&v<=kT*1.1?C_LIME:"#FFB020"),
+    colorOf:(v,i)=>{if(days[i]&&days[i].partial)return"rgba(155,163,174,.5)";const k=tg(keys[i]).kcal;return v>=k*.9&&v<=k*1.1?C_LIME:"#FFB020"},
     label:c=>c.dataset.type==="line"?`الهدف ${kT}`:`${c.raw.toLocaleString("en-US")} سعر • بروتين ${days[c.dataIndex].protein??"—"} جم`});
   bars("cP",labels,days.map(d=>d&&d.protein!=null?d.protein:null),{target:pT,unit:"جم",titleOf:tt,empty:"مفيش أيام متسجلة في الفترة دي.",
-    colorOf:(v,i)=>days[i]&&days[i].partial?"rgba(155,163,174,.5)":(v>=pT?C_LIME:"rgba(184,242,58,.45)"),label:c=>c.dataset.type==="line"?`الهدف ${pT} جم`:`${c.raw} جم بروتين`});
+    colorOf:(v,i)=>days[i]&&days[i].partial?"rgba(155,163,174,.5)":(v>=tg(keys[i]).p?C_LIME:"rgba(184,242,58,.45)"),label:c=>c.dataset.type==="line"?`الهدف ${pT} جم`:`${c.raw} جم بروتين`});
 }
 
 /* ---------------- wiring ---------------- */
