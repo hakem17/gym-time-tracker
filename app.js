@@ -3,9 +3,10 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{absA:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-16i";
+const BUILD="2026-10-22a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
+const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
 
 /* ================= storage ================= */
 function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.plans)return v}catch(e){}
@@ -156,12 +157,12 @@ function renderPicker(){
     <div class="list">${P.map(x=>`<div class="row">${IMG(imgOf(x.id),x.name,"thumb")||'<span class="thumb"></span>'}<div class="grow"><div class="t">${esc(x.name)}${x.optional?' <span class="tag">اختياري</span>':""}</div><span class="s"><span class="num">${dl?Math.max(1,Math.ceil(x.sets/2)):x.sets} × ${x.lo}–${x.hi}</span>${x.target?` • ${esc(x.target)}`:""}</span></div></div>`).join("")}</div>
     <div class="sec"><h2>الإضافات</h2></div>
     <div class="opts" style="margin-top:0">${Object.keys(names).map(k=>`<button class="opt" data-k="${k}" role="switch" aria-checked="${!!pickedExtras[k]}"><span>${names[k]}</span><span class="sw"></span></button>`).join("")}</div>
-    <div class="muted" style="font-size:14px;margin:4px 2px">هخرج بعد</div>
+    <div class="muted" style="font-size:14px;margin:4px 2px;display:flex;justify-content:space-between"><span>مدة التمرينة</span><b id="outAt" style="color:var(--lime)">لو بدأت دلوقتي هتخرج ${clock(Date.now()+pickedBudget*60000)}</b></div>
     <div class="seg">${[[75,"1:15"],[90,"1:30"],[105,"1:45"],[120,"2:00"]].map(([v,l])=>`<button data-b="${v}" aria-pressed="${pickedBudget===v}"><span class="num">${l}</span></button>`).join("")}</div>
     <button class="btn lime block" id="startBtn">ابدأ ${DAYS[pickedDay].t}</button>`;
   root.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{pickedDay=b.dataset.day;renderPicker()});
   root.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{pickedExtras[o.dataset.k]=!pickedExtras[o.dataset.k];o.setAttribute("aria-checked",pickedExtras[o.dataset.k])});
-  root.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{pickedBudget=+b.dataset.b;root.querySelectorAll("[data-b]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  root.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{pickedBudget=+b.dataset.b;$("outAt").textContent=`لو بدأت دلوقتي هتخرج ${clock(Date.now()+pickedBudget*60000)}`;root.querySelectorAll("[data-b]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
   $("startBtn").onclick=startSession;
 }
 function startWorkoutFor(day){pickedDay=day;pickedExtras=null;go("workout")}
@@ -194,7 +195,7 @@ function exClosed(it,i,isCur){
   const n=it.timed?(it.done?1:0):doneRows(it).length,of=it.timed?1:it.sets,ok=isDone(it);
   const sub=it.timed?`${it.minutes} دقيقة`:`${it.sets} × ${it.lo}–${it.hi}${it.target?` • ${it.target}`:""}`;
   return`<div class="ex${isCur?" cur":""}" id="ex${i}"><button class="ex-row" data-open="${i}" aria-expanded="false">
-    ${IMG(imgOf(it.id),it.name,"thumb")||'<span class="thumb"></span>'}<span class="grow"><h3>${esc(it.name)}</h3><span class="s">${it.skip?`اتعدّى: ${esc(it.skip)}`:esc(sub)}</span></span>
+    ${IMG(imgOf(it.id),it.name,"thumb")||'<span class="thumb"></span>'}<span class="grow"><h3>${esc(it.name)}</h3><span class="s">${it.skip?`اتعدّى: ${esc(it.skip)}`:ok&&!it.timed?(it.rir?`RIR ${esc(it.rir)}`:(it.abs||it.seconds?esc(sub):'<span style="color:var(--warn)">RIR ناقص: اضغط وسجله</span>')):esc(sub)}</span></span>
     <span class="ex-prog${ok?" done":""}">${ok&&!it.skip?"✓":`<span class="num">${n}/${of}</span>`}</span></button></div>`;
 }
 function exOpen(it,i,isCur){
@@ -229,7 +230,8 @@ function exOpen(it,i,isCur){
       <td><button class="chk" data-i="${i}" data-j="${j}" aria-label="خلصت ست ${j+1}" aria-pressed="${!!r.done}">${ICON.check}</button></td></tr>`}).join("")}
     </tbody></table>
     ${!allDone&&it.unit!=="وزن جسم"&&activeJ>=0&&it.rows[activeJ].w!==""?(()=>{const st=stepFor(it,it.rows[activeJ].w);return`<div class="adj"><span>وزن الستات الجاية</span><button data-step="${i}" data-d="${-st}">−${st}</button><b class="num">${esc(it.rows[activeJ].w)}</b><button data-step="${i}" data-d="${st}">+${st}</button></div>`})():""}
-    ${allDone?`<div class="chips" style="margin-top:10px"><span class="muted" style="font-size:13px">آخر ست، فاضل كام عدة؟</span>${["0","1","2","3","4+"].map(v=>`<button class="chip" data-rir="${i}" data-v="${v}" aria-pressed="${it.rir===v}">${v}</button>`).join("")}</div>`:""}
+    ${it.seconds?"":`<label class="rirbox${allDone&&!it.rir&&!it.abs?" need":""}"><span><b>RIR آخر ست</b><small>فاضلك كام عدة لحد ما توقف؟</small></span>
+      <select data-rir="${i}" aria-label="RIR آخر ست"><option value="" ${!it.rir?"selected":""}>اختار</option>${RIR_OPTS.map(([v,l])=>`<option value="${v}" ${it.rir===v?"selected":""}>${l}</option>`).join("")}</select></label>`}
     <div class="exf"><button class="link" data-add="${i}">+ ست</button>${!nd&&prev.length?`<button class="link" data-same="${i}">✓ كله زي اللي فات</button>`:""}${nd?"":`<button class="link dim" data-skip="${i}">عدّي</button>`}</div>`}
     <div class="chips hidden" id="sk${i}" style="margin-top:6px"></div></div></div>`;
 }
@@ -241,7 +243,8 @@ function wireSession(){
   q(".chk").forEach(b=>b.onclick=()=>toggleSet(+b.dataset.i,+b.dataset.j));
   q("[data-anim]").forEach(b=>b.onclick=()=>{const box=b.closest(".ex-media"),still=box.classList.toggle("still");b.innerHTML=still?'<svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg>';b.setAttribute("aria-pressed",still);b.setAttribute("aria-label",still?"شغّل الحركة":"وقّف الحركة")});
   q("[data-add]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.add],l=it.rows[it.rows.length-1];it.rows.push({w:l?l.w:"",r:l?l.r:"",done:false});save();renderSession()});
-  q("[data-rir]").forEach(b=>b.onclick=()=>{S.items[+b.dataset.rir].rir=b.dataset.v;save();renderSession()});
+  q("select[data-rir]").forEach(sel=>sel.onchange=()=>{const i=+sel.dataset.rir,it=S.items[i];it.rir=sel.value;
+    if(doneRows(it).length>=it.sets&&it.rir){S.open=null;save();renderSession();focusCurrent()}else{save();sel.closest(".rirbox").classList.remove("need")}});
   q("[data-skip]").forEach(b=>b.onclick=()=>{const i=+b.dataset.skip,box=$("sk"+i);
     box.innerHTML='<span class="muted" style="font-size:13px">ليه؟</span>'+SKIP_REASONS.map(r=>`<button class="chip" data-r="${r}">${r}</button>`).join("");box.classList.toggle("hidden");
     box.querySelectorAll("[data-r]").forEach(c=>c.onclick=()=>{S.items[i].skip=c.dataset.r;S.open=null;save();renderSession();focusCurrent()})});
@@ -259,8 +262,9 @@ function wireSession(){
     it.rows.forEach(r=>{if(!r.done&&r.w!==""){r.w=String(Math.max(0,Math.round((parseFloat(r.w)+d)*100)/100));r.touched=true}});save();renderSession()});
   q("[data-same]").forEach(b=>b.onclick=()=>{unlock();const i=+b.dataset.same,it=S.items[i];let bad=false;
     it.rows.forEach(r=>{if(!r.done){if(!r.r){bad=true;return}r.done=true;r.t=Date.now()}});
-    if(!bad)checkPR(it);S.open=null;save();renderSession();
-    if(!bad){if(S.items.some(x=>!isDone(x))){const nx=S.items[curIndex()];startRest(it.rest||90,`راحة • الجاي: ${nx?nx.name:""}`);focusCurrent()}}});
+    const askRir=!bad&&!it.rir&&!it.abs&&!it.seconds;
+    if(!bad)checkPR(it);S.open=askRir?i:null;save();renderSession();
+    if(!bad){if(S.items.some(x=>!isDone(x))){const nx=S.items[curIndex()];startRest(it.rest||90,`راحة • الجاي: ${nx?nx.name:""}`);if(!askRir)focusCurrent()}}});
   const fin=btn=>()=>{if(armed(btn,"اضغط تاني للإنهاء"))endSession()};
   $("finishBtn").onclick=fin($("finishBtn"));$("finishBtn2").onclick=fin($("finishBtn2"));
   $("restartBtn").onclick=()=>{if(!armed($("restartBtn"),"اضغط تاني: هتتمسح ومش هتتحفظ"))return;const day=S.day;D.active=null;save();stopRest();try{lock&&lock.release()}catch(e){}pickedDay=day;renderWorkout()};
@@ -271,12 +275,13 @@ function toggleSet(i,j){
   if(!r.r){const inp=$("ex"+i).querySelector(`input[data-j="${j}"][data-f="r"]`);if(inp){inp.focus();inp.style.borderColor="var(--warn)"}return}
   r.done=true;r.t=Date.now();justDone=i+"-"+j;checkPR(it,r);
   it.rows.forEach((x,k)=>{if(k>j&&!x.done&&!x.touched)x.w=r.w}); // carry a changed weight to untouched sets below
-  const allDone=doneRows(it).length>=it.sets;if(allDone){S.open=null;justOpened=curIndex()}save();
+  const allDone=doneRows(it).length>=it.sets,askRir=allDone&&!it.rir&&!it.abs&&!it.seconds;if(allDone){if(askRir)S.open=i;else{S.open=null;justOpened=curIndex()}}save();
   const left=S.items.some(x=>!isDone(x));renderSession();
   if(!left){stopRest();$("finishBtn2").scrollIntoView({behavior:"smooth",block:"center"});return}
   const nx=S.items[curIndex()];
   startRest(it.rest||90,allDone?`راحة • الجاي: ${nx?nx.name:""}`:`راحة • ${it.name}`);
-  if(allDone)focusCurrent();
+  if(allDone&&!askRir)focusCurrent();
+  if(askRir)setTimeout(()=>{const b=$("ex"+i)&&$("ex"+i).querySelector(".rirbox");b&&b.scrollIntoView({behavior:"smooth",block:"center"})},150);
 }
 function checkPR(it,r){
   if(it.prShown)return;const prev=bestEver(it.id,A().startedAt);if(!prev)return;
@@ -309,7 +314,8 @@ function tick(){
   const onW=curRoute&&curRoute.view==="workout";
   if(onW&&$("elapsed")){const el=(Date.now()-S.startedAt)/1000;$("elapsed").textContent=fmt(el,el>=3600);
     const left=S.budget-el/60,st=$("status"),rem=S.items.filter(x=>!isDone(x)).length;
-    if(st){st.className=left<0?"late":"";st.textContent=left<0?`عدّيت وقتك بـ ${Math.ceil(-left)} دقيقة`:`فاضل ${Math.floor(left)} دقيقة • ${rem} متبقي`}}
+    const out=clock(S.startedAt+S.budget*60000);
+    if(st){st.className=left<0?"late":"";st.textContent=left<0?`كان المفروض تخرج ${out}، متأخر ${Math.ceil(-left)} دقيقة • ${rem} متبقي`:`هتخرج الساعة ${out} • ${rem} متبقي`}}
   const R=S.rest;
   if(!R){rest.classList.add("hidden");document.body.classList.remove("resting");return}
   rest.classList.remove("hidden");document.body.classList.add("resting");
