@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{absA:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-22b";
+const BUILD="2026-10-22c";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -401,11 +401,21 @@ function tick(){
 setInterval(tick,250);
 
 /* ================= SUMMARY ================= */
+/* the order you actually played: each set is timestamped, so lifts are sorted by their first set */
+function playOrder(items){
+  const t0=x=>{const ts=(x.logs||[]).map(l=>l.t).filter(Boolean);return ts.length?Math.min(...ts):Infinity};
+  const sortT=a=>a.map((x,k)=>({x,k,t:t0(x)})).sort((a,b)=>a.t-b.t||a.k-b.k).map(o=>o.x);
+  const warm=items.filter(x=>x.timed&&x.id==="warmup"),main=items.filter(x=>!x.timed&&!x.abs),
+        timed=items.filter(x=>x.timed&&x.id!=="warmup"),abs=items.filter(x=>!x.timed&&x.abs);
+  return [...warm,...sortT(main),...timed,...sortT(abs)];
+}
+const reordered=items=>{const a=items.filter(x=>!x.timed&&!x.abs),b=playOrder(items).filter(x=>!x.timed&&!x.abs);return a.some((x,k)=>x!==b[k])};
 function summaryText(h){
   const dur=Math.round((h.finishedAt-h.startedAt)/60000);
   const out=[`${DAYS[h.day].t} — ${dateLbl(h.startedAt)}`,`دخول ${clock(h.startedAt)}، خروج ${clock(h.finishedAt)} (${hm(dur)})`,""];
   let n=1,absHead=false;
-  h.items.forEach(x=>{
+  if(reordered(h.items))out.push("(الترتيب ده هو اللي اتلعب فعلاً، مختلف عن ترتيب الخطة)","");
+  playOrder(h.items).forEach(x=>{
     if(x.timed){out.push(`${x.name}: ${x.done?`${x.minutes} دقيقة ✅`:`متعملتش${x.skip?` (${x.skip})`:""}`}`);return}
     if(x.abs&&!absHead){out.push("","بطن:");absHead=true}
     if(!x.logs.length&&x.optional)return;
@@ -425,7 +435,7 @@ function renderSummary(id){
   root.innerHTML=`<div class="hdr"><div><a class="back" href="#/">${ICON.chev}الرئيسية</a><h1>ملخص التمرين</h1><div class="sub">${DAYS[h.day].t} • ${dateLbl(h.startedAt)} • ${clock(h.startedAt)}</div></div></div>
     <div class="grid3"><div class="stat"><div class="k">المدة</div><div class="v num">${hm(m)}</div></div><div class="stat"><div class="k">تمارين</div><div class="v num">${ex.length}</div></div><div class="stat"><div class="k">ستات</div><div class="v num">${sets}</div></div></div>
     <div class="sec"><h2>أداء التمارين</h2></div>
-    <div class="list">${h.items.map(x=>x.timed?`<div class="row"><div class="grow"><div class="t">${esc(x.name)}</div><span class="s">${x.minutes} دقيقة</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':`<span class="tag">${x.skip||"لا"}</span>`}</span></div>`
+    <div class="list">${playOrder(h.items).map(x=>x.timed?`<div class="row"><div class="grow"><div class="t">${esc(x.name)}</div><span class="s">${x.minutes} دقيقة</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':`<span class="tag">${x.skip||"لا"}</span>`}</span></div>`
       :(!x.logs.length&&x.optional)?"":`<div class="row">${IMG(imgOf(x.id),x.name,"thumb")||'<span class="thumb"></span>'}<div class="grow"><div class="t">${esc(x.name)} ${x.logs.length&&isPR(x)?'<span class="pr">PR</span>':""}</div><span class="s num">${x.logs.length?esc(setsTxt(x.logs,x)):`متلعبش${x.skip?` (${esc(x.skip)})`:""}`}${x.rir?` • RIR ${esc(x.rir)}`:""}</span></div>${x.logs.length?'<span class="tag lime">✓</span>':""}</div>`).join("")}</div>
     <button class="btn lime block" id="shareBtn" style="margin-top:16px">ابعت الملخص للكوتش</button>
     <div class="grid2" style="margin-top:10px"><button class="btn ghost" id="copyBtn">نسخ</button>${mine?`<button class="btn ghost" id="editBtn">عدّل الأرقام</button>`:""}</div>
