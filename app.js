@@ -1,9 +1,9 @@
 /* Rep — core: storage, router, workout logging, summary, settings.
    Data lives in localStorage under KEY (unchanged since v1, so old history keeps working). */
-const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{absA:true}}};
+const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-22c";
+const BUILD="2026-10-24a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -133,7 +133,9 @@ window.addEventListener("hashchange",route);
 /* ================= WORKOUT ================= */
 const A=()=>D.active;
 const doneRows=it=>(it.rows||[]).filter(r=>r.done);
-const isDone=it=>it.timed?(it.done||!!it.skip):(!!it.skip||doneRows(it).length>=it.sets);
+const isDone=it=>it.timed||it.free?(it.done||!!it.skip):(!!it.skip||doneRows(it).length>=it.sets);
+/* abs is a free block: no fixed exercises — you log how many exercises (أشكال) and sets each */
+const absTxt=x=>x.done?`${x.shapes} ${+x.shapes===1?"شكل":"أشكال"} × ${x.sets} ${+x.sets===1?"مجموعة":"مجموعات"}`:`متلعبتش${x.skip?` (${x.skip})`:""}`;
 const curIndex=()=>A().items.findIndex(x=>!isDone(x));
 let pickedDay=null,pickedExtras=null,pickedBudget=120,pickedFit=true,justDone=null,justOpened=null;
 
@@ -145,10 +147,10 @@ function renderWorkout(){D.active?renderSession():renderPicker()}
 function renderPicker(){
   const root=$("v-workout"),nd=nextDayKey();
   if(!pickedDay)pickedDay=nd;
-  if(!pickedExtras||pickedExtras._d!==pickedDay)pickedExtras={_d:pickedDay,warmup:true,cardio:false,absA:false,absB:false,...DAYS[pickedDay].ex};
+  if(!pickedExtras||pickedExtras._d!==pickedDay)pickedExtras={_d:pickedDay,warmup:true,cardio:false,abs:false,...DAYS[pickedDay].ex};
   const P=D.plans[pickedDay]||[],first=P.find(x=>!x.optional)||P[0],dl=isDeload();
   const WU=D.plans.warmup||DEFAULTS.warmup;
-  const names={warmup:`تسخين ${WU.minutes} دقايق`,cardio:`مشاية ${D.plans.cardio.minutes} دقيقة`,absA:"بطن A",absB:"بطن B (الجنب)"};
+  const names={warmup:`تسخين ${WU.minutes} دقايق`,cardio:`مشاية ${D.plans.cardio.minutes} دقيقة`,abs:"بطن (انت بتختار الأشكال)"};
   root.innerHTML=`<div class="hdr"><div><div class="sub">${dl?"أسبوع الديلود":"اختار تمرينة النهارده"}</div><h1>التمرين</h1></div></div>
     <div class="seg" role="group" aria-label="اليوم">${ROTATION.map(k=>`<button data-day="${k}" aria-pressed="${k===pickedDay}">${DAYS[k].t}${k===nd?" •":""}</button>`).join("")}</div>
     <div class="hero">${IMG(first?imgOf(first.id):"",first?first.name:"")}<div class="in"><div class="lbl">${pickedDay===nd?"التمرين الجاي في الدور":"تمرين مختلف عن الدور"}</div>
@@ -175,7 +177,7 @@ function renderFit(){
   if(F.fits)html=`<div class="fit ok">التمرينة دي محتاجة حوالي <b class="num">${hm(F.need)}</b>، والوقت اللي اخترته كفاية.</div>`;
   else if(F.possible)html=`<div class="fit warn"><b>الوقت قصير على التمرينة دي.</b> محتاجة حوالي <b class="num">${hm(F.need)}</b> بالراحة المكتوبة، وانت اخترت <b class="num">${hm(pickedBudget)}</b>.
       <div style="margin-top:6px">لو كمّلت، هقلل الراحة عشان تلحق: ${rs.map(r=>`<span class="num">${fmt(r)}</span> ← <span class="num">${fmt(fitRest(r,F.f))}</span>`).join("، ")}</div></div>`;
-  else html=`<div class="fit bad"><b>مش هتلحق حتى بأقل راحة.</b> محتاجة حوالي <b class="num">${hm(F.need)}</b>، وأقل حاجة ممكنة <b class="num">${hm(F.minNeed)}</b> (راحة 1:30 للتقيل و0:45 للصغير). ${(()=>{const on=[pickedExtras.cardio&&"المشاية",(pickedExtras.absA||pickedExtras.absB)&&"البطن"].filter(Boolean);return on.length?`شيل ${on.join(" أو ")}، أو اختار وقت أطول.`:"اختار وقت أطول."})()}</div>`;
+  else html=`<div class="fit bad"><b>مش هتلحق حتى بأقل راحة.</b> محتاجة حوالي <b class="num">${hm(F.need)}</b>، وأقل حاجة ممكنة <b class="num">${hm(F.minNeed)}</b> (راحة 1:30 للتقيل و0:45 للصغير). ${(()=>{const on=[pickedExtras.cardio&&"المشاية",(pickedExtras.abs)&&"البطن"].filter(Boolean);return on.length?`شيل ${on.join(" أو ")}، أو اختار وقت أطول.`:"اختار وقت أطول."})()}</div>`;
   box.innerHTML=html+(F.fits?"":`<button class="opt" id="fitTg" role="switch" aria-checked="${pickedFit}" style="background:var(--s1);border-radius:var(--r-md);margin-top:8px"><span>قلل الراحة عشان أخرج في ميعادي</span><span class="sw"></span></button>`);
   const t=$("fitTg");if(t)t.onclick=()=>{pickedFit=!pickedFit;t.setAttribute("aria-checked",pickedFit)};
 }
@@ -187,8 +189,7 @@ function buildItems(day,ex){
   const items=D.plans[day].map(mk);
   if(ex.warmup){const wu=D.plans.warmup||DEFAULTS.warmup;items.unshift({id:"warmup",name:"تسخين",timed:true,minutes:+wu.minutes||5,note:wu.note,done:false})}
   if(ex.cardio)items.push({id:"cardio",name:"مشاية إنكلاين",timed:true,minutes:+D.plans.cardio.minutes||20,note:D.plans.cardio.note,done:false});
-  if(ex.absA)D.plans.absA.forEach(x=>items.push({...mk(x),abs:true}));
-  if(ex.absB)D.plans.absB.forEach(x=>items.push({...mk(x),abs:true}));
+  if(ex.abs)items.push({id:"abs",name:"بطن",abs:true,free:true,shapes:"3",sets:"3",done:false});
   return items;
 }
 
@@ -215,6 +216,7 @@ function timeParts(items,co){
   let fixed=0;const rests=[];
   items.forEach(it=>{if(isDone(it))return;
     if(it.timed){fixed+=it.minutes*60;return}
+    if(it.free){fixed+=600;return}
     const done=doneRows(it).length;if(it.optional&&!done)return;
     const left=Math.max(0,it.sets-done);if(!left)return;
     fixed+=left*WORK_S+(done?0:co);
@@ -263,10 +265,10 @@ function renderSession(){
   wireSession();tick();justDone=null;justOpened=null;
 }
 function exClosed(it,i,isCur){
-  const n=it.timed?(it.done?1:0):doneRows(it).length,of=it.timed?1:it.sets,ok=isDone(it);
-  const sub=it.timed?`${it.minutes} دقيقة`:`${it.sets} × ${it.lo}–${it.hi}${it.target?` • ${it.target}`:""}`;
+  const n=it.timed||it.free?(it.done?1:0):doneRows(it).length,of=it.timed||it.free?1:it.sets,ok=isDone(it);
+  const sub=it.free?(it.done?absTxt(it):"اختار الأشكال وسجل العدد"):it.timed?`${it.minutes} دقيقة`:`${it.sets} × ${it.lo}–${it.hi}${it.target?` • ${it.target}`:""}`;
   return`<div class="ex${isCur?" cur":""}" id="ex${i}"><button class="ex-row" data-open="${i}" aria-expanded="false">
-    ${IMG(imgOf(it.id),it.name,"thumb")||'<span class="thumb"></span>'}<span class="grow"><h3>${esc(it.name)}</h3><span class="s">${it.skip?`اتعدّى: ${esc(it.skip)}`:ok&&!it.timed?(it.rir?`RIR ${esc(it.rir)}`:(it.abs||it.seconds?esc(sub):'<span style="color:var(--warn)">RIR ناقص: اضغط وسجله</span>')):esc(sub)}</span></span>
+    ${IMG(imgOf(it.id),it.name,"thumb")||'<span class="thumb"></span>'}<span class="grow"><h3>${esc(it.name)}</h3><span class="s">${it.skip?`اتعدّى: ${esc(it.skip)}`:ok&&!it.timed&&!it.free?(it.rir?`RIR ${esc(it.rir)}`:(it.abs||it.seconds?esc(sub):'<span style="color:var(--warn)">RIR ناقص: اضغط وسجله</span>')):esc(sub)}</span></span>
     <span class="ex-prog${ok?" done":""}">${ok&&!it.skip?"✓":`<span class="num">${n}/${of}</span>`}</span></button></div>`;
 }
 function exOpen(it,i,isCur){
@@ -275,6 +277,14 @@ function exOpen(it,i,isCur){
   const anim=m&&m.img[1];
   const head=m?`<div class="ex-media${anim?" anim":""}">${IMG(m.img[0],it.name+": بداية الحركة")}${anim?IMG(m.img[1],it.name+": نهاية الحركة","f2"):""}<div class="cap"><h3>${esc(it.name)}</h3></div>${anim?`<button class="tool flip" data-anim="${i}" aria-pressed="false" aria-label="وقّف الحركة"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg></button>`:""}</div>`
     :`<div class="ex-body" style="padding-bottom:0"><h3 style="font-size:19px;font-weight:800">${esc(it.name)}</h3></div>`;
+  if(it.free){const st=(k,lab,max)=>`<div class="adj" style="margin-top:8px"><span>${lab}</span><button data-fs="${i}" data-k="${k}" data-d="-1" aria-label="أقل">−</button><b class="num">${esc(it[k])}</b><button data-fs="${i}" data-k="${k}" data-d="1" aria-label="أكتر">+</button></div>`;
+    return`<div class="ex${isCur?" cur":""}" id="ex${i}"><div class="ex-body"><h3 style="font-size:19px;font-weight:800">بطن</h3>
+      <div class="hintl">العب الأشكال اللي تختارها، وسجل عددها وكام مجموعة لكل شكل.</div>
+      ${it.skip?`<div class="hintl" style="margin-top:8px">اتعدّت: ${esc(it.skip)} <button class="link" data-unskip="${i}">رجّعها</button></div>`
+       :it.done?`<div class="goal" style="margin-top:10px">✓ ${absTxt(it)}</div><button class="link dim" data-undo-timed="${i}">عدّل</button>`
+       :`${st("shapes","عدد الأشكال",8)}${st("sets","مجموعات لكل شكل",8)}
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn lime" style="flex:1" data-mark="${i}">اتلعبت</button><button class="btn ghost" data-skip="${i}">متلعبتش</button></div>
+        <div class="chips hidden" id="sk${i}" style="margin-top:8px"></div>`}</div></div>`}
   if(it.timed)return`<div class="ex${isCur?" cur":""}" id="ex${i}">${head}<div class="ex-body">
       ${it.note?`<div class="hintl">${esc(it.note)}</div>`:""}
       ${it.skip?`<div class="hintl">اتعدّت: ${esc(it.skip)} <button class="link" data-unskip="${i}">رجّعها</button></div>`:""}</div>
@@ -321,6 +331,7 @@ function wireSession(){
     box.querySelectorAll("[data-r]").forEach(c=>c.onclick=()=>{S.items[i].skip=c.dataset.r;S.open=null;save();renderSession();focusCurrent()})});
   q("[data-unskip]").forEach(b=>b.onclick=()=>{delete S.items[+b.dataset.unskip].skip;save();renderSession()});
   q("[data-time]").forEach(b=>b.onclick=()=>{unlock();const i=+b.dataset.time,it=S.items[i];startRest(it.minutes*60,it.name,i)});
+  q("[data-fs]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.fs],k=b.dataset.k;it[k]=String(Math.min(8,Math.max(1,(+it[k]||0)+ +b.dataset.d)));save();renderSession()});
   q("[data-mark]").forEach(b=>b.onclick=()=>{const i=+b.dataset.mark;S.items[i].done=true;if(S.rest&&S.rest.timed===i)stopRest();S.open=null;save();renderSession();focusCurrent()});
   q("[data-undo-timed]").forEach(b=>b.onclick=()=>{S.items[+b.dataset.undoTimed].done=false;save();renderSession()});
   q("[data-cue]").forEach(b=>b.onclick=()=>$("cue"+b.dataset.cue).classList.toggle("hidden"));
@@ -371,7 +382,9 @@ $("restSkip").onclick=()=>{const S=A();if(S&&S.rest&&S.rest.timed!=null){S.items
 
 function endSession(){
   const S=A();if(!S)return;S.finishedAt=Date.now();stopRest();
-  const h={day:S.day,startedAt:S.startedAt,finishedAt:S.finishedAt,items:S.items.map(x=>x.timed
+  const h={day:S.day,startedAt:S.startedAt,finishedAt:S.finishedAt,items:S.items.map(x=>x.free
+    ?{id:"abs",name:"بطن",abs:true,free:true,done:!!x.done,shapes:x.done?+x.shapes:0,sets:x.done?+x.sets:0,skip:x.skip||"",logs:[]}
+    :x.timed
     ?{id:x.id,name:x.name,timed:true,minutes:x.minutes,done:!!x.done,skip:x.skip||""}
     :{id:x.id,name:x.name,unit:x.unit,seconds:!!x.seconds,abs:!!x.abs,optional:!!x.optional,logs:doneRows(x).map(r=>({w:r.w,r:r.r,t:r.t})),rir:x.rir,skip:x.skip||"",...(x.origId?{swappedFrom:x.origName}:{})})};
   D.history.push(h);if(D.history.length>400)D.history=D.history.slice(-400);
@@ -417,6 +430,7 @@ function summaryText(h){
   if(reordered(h.items))out.push("(الترتيب ده هو اللي اتلعب فعلاً، مختلف عن ترتيب الخطة)","");
   playOrder(h.items).forEach(x=>{
     if(x.timed){out.push(`${x.name}: ${x.done?`${x.minutes} دقيقة ✅`:`متعملتش${x.skip?` (${x.skip})`:""}`}`);return}
+    if(x.free){out.push("",`بطن: ${absTxt(x)}`);return}
     if(x.abs&&!absHead){out.push("","بطن:");absHead=true}
     if(!x.logs.length&&x.optional)return;
     const u=x.unit&&x.unit!=="كجم"?` (${x.unit})`:"";
@@ -435,7 +449,7 @@ function renderSummary(id){
   root.innerHTML=`<div class="hdr"><div><a class="back" href="#/">${ICON.chev}الرئيسية</a><h1>ملخص التمرين</h1><div class="sub">${DAYS[h.day].t} • ${dateLbl(h.startedAt)} • ${clock(h.startedAt)}</div></div></div>
     <div class="grid3"><div class="stat"><div class="k">المدة</div><div class="v num">${hm(m)}</div></div><div class="stat"><div class="k">تمارين</div><div class="v num">${ex.length}</div></div><div class="stat"><div class="k">ستات</div><div class="v num">${sets}</div></div></div>
     <div class="sec"><h2>أداء التمارين</h2></div>
-    <div class="list">${playOrder(h.items).map(x=>x.timed?`<div class="row"><div class="grow"><div class="t">${esc(x.name)}</div><span class="s">${x.minutes} دقيقة</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':`<span class="tag">${x.skip||"لا"}</span>`}</span></div>`
+    <div class="list">${playOrder(h.items).map(x=>x.free?`<div class="row"><div class="grow"><div class="t">بطن</div><span class="s">${absTxt(x)}</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':'<span class="tag">لا</span>'}</span></div>`:x.timed?`<div class="row"><div class="grow"><div class="t">${esc(x.name)}</div><span class="s">${x.minutes} دقيقة</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':`<span class="tag">${x.skip||"لا"}</span>`}</span></div>`
       :(!x.logs.length&&x.optional)?"":`<div class="row">${IMG(imgOf(x.id),x.name,"thumb")||'<span class="thumb"></span>'}<div class="grow"><div class="t">${esc(x.name)} ${x.logs.length&&isPR(x)?'<span class="pr">PR</span>':""}</div><span class="s num">${x.logs.length?esc(setsTxt(x.logs,x)):`متلعبش${x.skip?` (${esc(x.skip)})`:""}`}${x.rir?` • RIR ${esc(x.rir)}`:""}</span></div>${x.logs.length?'<span class="tag lime">✓</span>':""}</div>`).join("")}</div>
     <button class="btn lime block" id="shareBtn" style="margin-top:16px">ابعت الملخص للكوتش</button>
     <div class="grid2" style="margin-top:10px"><button class="btn ghost" id="copyBtn">نسخ</button>${mine?`<button class="btn ghost" id="editBtn">عدّل الأرقام</button>`:""}</div>
@@ -450,7 +464,9 @@ function renderSummary(id){
 }
 function renderEdit(h){
   const box=$("editBox");
-  box.innerHTML=h.items.map((x,i)=>x.timed?`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><label class="check"><input type="checkbox" data-i="${i}" data-f="done" ${x.done?"checked":""}> ${esc(x.name)}</label></div>`
+  box.innerHTML=h.items.map((x,i)=>x.free?`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><label class="check"><input type="checkbox" data-i="${i}" data-f="done" ${x.done?"checked":""}> بطن</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><span class="muted" style="font-size:13px">أشكال</span><input class="fld" style="max-width:64px;text-align:center" inputmode="numeric" data-i="${i}" data-f="shapes" value="${esc(x.shapes)}">
+      <span class="muted" style="font-size:13px">مجموعات</span><input class="fld" style="max-width:64px;text-align:center" inputmode="numeric" data-i="${i}" data-f="sets" value="${esc(x.sets)}"></div></div>`:x.timed?`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><label class="check"><input type="checkbox" data-i="${i}" data-f="done" ${x.done?"checked":""}> ${esc(x.name)}</label></div>`
     :`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><div style="font-weight:700;margin-bottom:6px">${esc(x.name)}</div>
       ${x.logs.map((l,j)=>`<div style="display:flex;gap:6px;align-items:center;margin-top:6px"><span class="num muted" style="width:18px">${j+1}</span>
         <input class="fld" style="max-width:90px;text-align:center" inputmode="decimal" aria-label="الوزن" data-i="${i}" data-j="${j}" data-f="w" value="${esc(l.w)}"><span class="muted">×</span>
@@ -505,7 +521,7 @@ function renderSettings(){
   window.GTT_renderSync&&GTT_renderSync();
 }
 let planTab="push",openEx=null;
-const PTABS={push:"Push",pull:"Pull",legs:"Legs",absA:"بطن A",absB:"بطن B",cardio:"مشاية"};
+const PTABS={push:"Push",pull:"Pull",legs:"Legs",cardio:"مشاية"};
 function renderPlans(){
   const root=$("v-plans");
   root.innerHTML=`<div class="hdr"><div><a class="back" href="#/settings">${ICON.chev}الإعدادات</a><h1>التمارين</h1></div></div>

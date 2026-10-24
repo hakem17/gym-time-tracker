@@ -132,7 +132,8 @@ function exerciseSeries(S){
 }
 const sessDur=h=>(h.source==="chat"&&!h.durKnown)?null:Math.round((h.finishedAt-h.startedAt)/60000);
 const cardioDone=h=>h.items.some(x=>x.timed&&x.id==="cardio"&&x.done);
-const absDone=h=>h.items.some(x=>x.abs&&x.logs&&x.logs.length);
+const absDone=h=>h.items.some(x=>x.abs&&((x.logs&&x.logs.length)||(x.free&&x.done)));
+const notDone=x=>x.timed||x.free?!x.done:!(x.logs&&x.logs.length);
 function bodySeries(){
   const mergeBy=(a,b)=>{const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]).forEach(x=>m.set(x.date,x));return[...m.values()].sort((x,y)=>x.date<y.date?-1:1)};
   const PB=(typeof D!=="undefined"&&D.body)||{},C=COACH||{};
@@ -226,7 +227,7 @@ function renderHome(){
       `<a class="icon-btn" href="#/settings" aria-label="الإعدادات" style="color:var(--muted)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></a>`)+
     (isDeload()?`<div class="card" style="border-color:rgba(90,200,250,.4);margin-bottom:12px"><b>أسبوع الديلود</b><div class="muted" style="font-size:14px">نص الستات، نفس الأوزان، ووقف وفاضلك 3 عدات. التطبيق بيظبطها لوحده.</div></div>`:"")+
     (act?`<div class="hero">${IMG(imgOf((act.items.find(x=>!x.timed)||{}).id),"")}<div class="in"><div class="lbl">تمرين شغال</div><h2>${DAYS[act.day].t}</h2>
-        <div class="meta">بدأ ${clock(act.startedAt)} • <span class="num">${act.items.filter(x=>x.timed?(x.done||x.skip):(x.skip||(x.rows||[]).filter(r=>r.done).length>=x.sets)).length}/${act.items.length}</span> تمارين</div>
+        <div class="meta">بدأ ${clock(act.startedAt)} • <span class="num">${act.items.filter(isDone).length}/${act.items.length}</span> تمارين</div>
         <a class="btn lime block" href="#/workout">كمّل التمرين</a></div></div>`
      :`<div class="hero">${IMG(first?imgOf(first.id):"",first?first.name:"")}<div class="in"><div class="lbl">تمرين النهارده</div><h2>${DAYS[nd].t}</h2>
         <div class="meta">${DAYS[nd].d} • <span class="num">${P.filter(x=>!x.optional).length}</span> تمارين</div>
@@ -319,7 +320,7 @@ function progAdh(body,S){
   for(let i=n-1;i>=0;i--){const a=ws-i*7*DAY,b=a+7*DAY,ss=S.filter(h=>h.startedAt>=a&&h.startedAt<b);W.push({a,n:ss.length,c:ss.filter(cardioDone).length,ab:ss.filter(absDone).length})}
   const wk=S.filter(h=>h.startedAt>=ws);
   const vol={};wk.forEach(h=>h.items.forEach(x=>{const m=MUSCLE[x.id];if(m&&x.logs)vol[m]=(vol[m]||0)+x.logs.length}));
-  const skips=[];wk.forEach(h=>h.items.forEach(x=>{if((x.timed?!x.done:!(x.logs&&x.logs.length))&&!x.optional&&x.id!=="warmup")skips.push(x)}));
+  const skips=[];wk.forEach(h=>h.items.forEach(x=>{if(notDone(x)&&!x.optional&&x.id!=="warmup")skips.push(x)}));
   const reasons={};skips.forEach(x=>{const r=x.skip||"من غير سبب";reasons[r]=(reasons[r]||0)+1});
   body.innerHTML=rangeSeg(n,[[4,"4 أسابيع"],[8,"8 أسابيع"],[12,"12 أسبوع"]],"w")+
     `<div class="card"><b>التمرينات كل أسبوع</b><div class="muted" style="font-size:13px">الهدف 6 في الأسبوع (الأسبوع بيبدأ السبت)</div><div class="chartbox" id="cAdh"></div>
@@ -344,7 +345,7 @@ function weekReport(){
     const before=e.cur.filter(p=>p.t<ws);if(!before.length)return;
     const best=Math.max(...inWk.map(p=>p.v)),prevMax=Math.max(...before.map(p=>p.v)),last=before[before.length-1].v;
     const ch=(best/last-1)*100;(ch>0.5?ups:flat).push(`${e.name} ${pct(ch)}${best>prevMax*1.001?" 🎉":""}`)});
-  const skips=[];wk.forEach(h=>h.items.forEach(x=>{if((x.timed?!x.done:!(x.logs&&x.logs.length))&&!x.optional&&x.id!=="warmup")skips.push(`${x.name}${x.skip?` (${x.skip})`:""}`)}));
+  const skips=[];wk.forEach(h=>h.items.forEach(x=>{if(notDone(x)&&!x.optional&&x.id!=="warmup")skips.push(`${x.name}${x.skip?` (${x.skip})`:""}`)}));
   const durs=wk.map(sessDur).filter(v=>v!=null),wa=bodySeries().waist;
   const lines=[`تقرير الأسبوع (من ${shortD(ws)})`,`تمرينات: ${wk.length} من 6 • كارديو: ${card} من 4 • بطن: ${ab} من 3`];
   if(durs.length)lines.push(`متوسط مدة التمرينة: ${hm(Math.round(durs.reduce((a,b)=>a+b,0)/durs.length))}`);
@@ -352,7 +353,7 @@ function weekReport(){
   lines.push("",`اتحسن (${ups.length}): ${ups.length?ups.join("، "):"مفيش"}`,`ثابت أو نزل (${flat.length}): ${flat.length?flat.join("، "):"مفيش"}`);
   if(skips.length)lines.push(`اتشال: ${skips.join("، ")}`);
   wk.forEach(h=>{lines.push("",`${DAYN[h.day]||h.day} • ${shortD(h.startedAt)}`);
-    h.items.forEach(x=>{if(x.timed){lines.push(`- ${x.name}: ${x.done?"✅":"❌"}`);return}if(x.logs&&x.logs.length)lines.push(`- ${x.name}: ${setsTxt(x.logs,x)}${x.rir?` (RIR ${x.rir})`:""}`)})});
+    h.items.forEach(x=>{if(x.free){lines.push(`- بطن: ${absTxt(x)}`);return}if(x.timed){lines.push(`- ${x.name}: ${x.done?"✅":"❌"}`);return}if(x.logs&&x.logs.length)lines.push(`- ${x.name}: ${setsTxt(x.logs,x)}${x.rir?` (RIR ${x.rir})`:""}`)})});
   return lines.join("\n");
 }
 window.GTT_weekReport=weekReport;
