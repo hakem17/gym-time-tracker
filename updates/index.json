@@ -68,5 +68,10 @@
   "file": "20261024T121331Z.enc.json",
   "label": "Nutrition 2026-10-23 (over, closed at 4500)",
   "at": "20261024T121331Z"
+ },
+ {
+  "file": "20261024T162004Z.enc.json",
+  "label": "Cancel maintenance 26/10, maintenance on 2/11",
+  "at": "20261024T162004Z"
  }
 ]

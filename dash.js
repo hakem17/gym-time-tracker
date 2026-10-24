@@ -446,7 +446,7 @@ function renderFood(){
   const all=(N.days||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
   if(!all.length||!T.kcal){root.innerHTML=hdr("الأكل","")+`<div class="card empty"><b>مفيش أيام أكل متسجلة</b>الأيام بتتسجل في شات Calorie Tracker وبتوصل هنا.</div>`;return}
   const DT=N.dayTargets||{},tg=dt=>{const o=DT[dt]||{};return{kcal:o.kcal||T.kcal,p:(o.protein||T.protein||[0])[0],c:(o.carbs||T.carbs||[0])[0],f:(o.fat||T.fat||[0])[0],m:!!DT[dt]}};
-  const last=all[all.length-1],L=tg(last.date),kT=L.kcal,pT=L.p,todayK=dkey(Date.now()),nextM=Object.keys(DT).filter(k=>k>=todayK).sort()[0];
+  const last=all[all.length-1],L=tg(last.date),kT=L.kcal,pT=L.p,todayK=dkey(Date.now()),nextM=Object.keys(DT).filter(k=>DT[k]&&k>=todayK).sort()[0];
   const R=UI.foodRange,end=new Date();end.setHours(12,0,0,0);
   const nDays=R||Math.max(1,Math.round((end.getTime()-parseD(all[0].date))/DAY)+1);
   const keys=[];for(let i=nDays-1;i>=0;i--)keys.push(dkey(end.getTime()-i*DAY));
