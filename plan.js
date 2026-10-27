@@ -1,12 +1,12 @@
 /* absA/absB stay only so old workouts keep their names; abs is now a free block in the app (أشكال × مجموعات). */
 /* Coach-managed: exercises + current targets. Bump PLAN_VER on every target update. */
-const PLAN_VER="2026-10-27a";
+const PLAN_VER="2026-10-27b";
 /* ---------- default plan ---------- */
 const E=(id,name,sets,lo,hi,rest,unit,target,o={})=>({id,name,sets,lo,hi,rest,unit,target,...o});
 const DEFAULTS={
   push:[
     E("pu1","شيست بريس جهاز (إنكلاين)",4,6,10,120,"كل ناحية","أول تمرين: 45 × 10 في الـ 4 ستات (الرابع جه 6). بعدها 47.5"),
-    E("pu2","دامبل شيست بريس",3,8,12,120,"كجم","تاني تمرين: 30 × 8–10، مش 25"),
+    E("pu2","دامبل شيست بريس",3,8,12,120,"كجم","25 × 12 في الـ 3 ستات، وبعدها جرّب 30 (مفيش 27.5)"),
     E("pu3","فراشة كابل",3,10,15,90,"كجم","10 × 12 في الـ 3 ستات"),
     E("pu4","فلات شيست بريس (جهاز Lying)",3,8,10,120,"كل ناحية","32.5 × 10 في الـ 3 ستات"),
     E("pu5","كتف دمبل أمامي",3,6,10,120,"كجم","20 × 10–12. لو لسه فيك عدات كمّل لحد الهدف"),
