@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-24a";
+const BUILD="2026-10-27a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -26,6 +26,7 @@ let D=load();
   D.fixes=D.fixes||{};
   if(!D.fixes.lp2019){D.history.forEach(h=>{if(h.day!=="legs")return;const d=new Date(h.startedAt);if(d.getMonth()!==9||d.getDate()!==15)return;
     const it=h.items.find(x=>x.id==="lg2");if(it&&it.logs.length===4&&it.logs[3].w=="20"&&it.logs[3].r=="19")it.logs.pop()});D.fixes.lp2019=true}
+  if(!D.fixes.cardio15){if(D.plans.cardio)D.plans.cardio.minutes=15;D.fixes.cardio15=true} // agreed: incline walk is 15 min
   if(D.active&&!D.active.v2){D.active.items.forEach(it=>{if(!it.timed&&!it.rows){it.rows=(it.logs||[]).map(l=>({w:l.w,r:l.r,done:true,t:l.t}));while(it.rows.length<it.sets){const l=it.rows[it.rows.length-1];it.rows.push({w:l?l.w:"",r:l?l.r:"",done:false})}}});D.active.v2=true;D.active.rest=null}
   D.profile=D.profile||{name:"محمد"};
   save();

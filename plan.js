@@ -45,7 +45,7 @@ const DEFAULTS={
     E("ab1","Pallof Press",3,10,12,45,"كجم","لكل ناحية"),
     E("ab2","Side Plank",2,30,45,45,"وزن جسم","لكل ناحية",{seconds:true}),
   ],
-  cardio:{minutes:20,note:"إنكلاين 15، سرعة 4"},
+  cardio:{minutes:15,note:"ميل 15، سرعة 4"},
   warmup:{minutes:5,note:"ستين خفاف على أول تمرين"}
 };
 
