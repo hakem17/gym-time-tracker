@@ -1,6 +1,6 @@
 /* absA/absB stay only so old workouts keep their names; abs is now a free block in the app (أشكال × مجموعات). */
 /* Coach-managed: exercises + current targets. Bump PLAN_VER on every target update. */
-const PLAN_VER="2026-10-28a";
+const PLAN_VER="2026-10-28b";
 /* ---------- default plan ---------- */
 const E=(id,name,sets,lo,hi,rest,unit,target,o={})=>({id,name,sets,lo,hi,rest,unit,target,...o});
 const DEFAULTS={
@@ -22,7 +22,7 @@ const DEFAULTS={
     E("pl4","قطنية",3,10,15,90,"كجم","22.5 × 12–15 لو مفيش وجع في الضهر"),
     E("pl5","رفرفة خلفي (جهاز)",3,12,15,90,"بلطات","130 × 15 في الـ 3 ستات، وبعدها خطوة أتقل"),
     E("pl6","فيس بول",3,12,15,90,"كجم","35 × 15 في الـ 3 ستات"),
-    E("pl7","بار كيرل باي",3,6,10,120,"كجم","37.5 × 8–10 (35 جت 11، 10، 10)"),
+    E("pl7","بار كيرل باي",3,6,10,120,"كجم","35 × 12 في الـ 3 ستات، وبعدها جرّب البار الأتقل (مفيش 37.5)"),
     E("pl8","انكلين دامبل كيرل",3,8,12,90,"كجم","15 × 10 في الـ 3 ستات",{left:true}),
     E("pl9","هامر دامبل كيرل",3,10,12,90,"كجم","خطوة أتقل من 20 × 10–12 (20 جت 12 في الـ 3 ستات)",{left:true}),
   ],
