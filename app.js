@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-10-27a";
+const BUILD="2026-10-29a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];

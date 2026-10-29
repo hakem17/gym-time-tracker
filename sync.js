@@ -29,33 +29,43 @@ async function decryptWithStoredKey(enc){
 const api=(path,opt={})=>fetch(`https://api.github.com/repos/${REPO}/contents/${path}`,{...opt,headers:{"Accept":"application/vnd.github+json","Authorization":`Bearer ${ls.get(TK)}`,...(opt.headers||{})}});
 async function remote(){const r=await api(PATH+"?ref=main",{cache:"no-store"});if(r.status===404)return null;if(!r.ok)throw new Error("get "+r.status);return r.json()}
 
+/* add whatever the backup has that this phone doesn't (never removes anything here) */
+function mergeInto(data){
+  const have=new Set(D.history.map(h=>h.startedAt));let added=0;
+  (data.history||[]).forEach(h=>{if(!have.has(h.startedAt)){D.history.push(h);added++}});
+  D.history.sort((a,b)=>a.startedAt-b.startedAt);
+  if(data.body){D.body=D.body||{};["waist","weight"].forEach(k=>{const m=new Map((D.body[k]||[]).map(x=>[x.date,x]));(data.body[k]||[]).forEach(x=>{if(!m.has(x.date))m.set(x.date,x)});D.body[k]=[...m.values()].sort((a,b)=>a.date<b.date?-1:1)})}
+  return added;
+}
+const decodeRemote=cur=>JSON.parse(new TextDecoder().decode(ub(cur.content.replace(/\n/g,""))));
 async function syncUp(){
   if(!ls.get(TK)){state="off";render();return}
   if(typeof D==="undefined")return;
   state="busy";msg="";render();
   try{
+    // safety: the upload replaces the backup, so first pull in anything this phone is missing
+    const cur=await remote();
+    if(cur){
+      let merged=false;
+      try{const added=mergeInto(await decryptWithStoredKey(decodeRemote(cur)));merged=true;if(added){save();window.GTT_refresh&&GTT_refresh()}}catch(e){}
+      if(!merged&&!D.history.length)throw new Error("empty");
+    }
     const payload={v:1,updated:new Date().toISOString(),build:typeof BUILD!=="undefined"?BUILD:"",history:D.history,body:D.body||{},plans:D.plans};
     const enc=await encrypt(payload);
-    const cur=await remote();
     const body={message:`Workout log backup ${new Date().toISOString().slice(0,16)}`,content:b64utf8(JSON.stringify(enc)),branch:"main",...(cur?{sha:cur.sha}:{})};
     const r=await api(PATH,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     if(r.status===401||r.status===403)throw new Error("auth");
     if(r.status===409||r.status===422){const again=await remote();body.sha=again&&again.sha;const r2=await api(PATH,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r2.ok)throw new Error("put "+r2.status)}
     else if(!r.ok)throw new Error("put "+r.status);
     ls.set(LAST,String(Date.now()));state="ok";
-  }catch(e){state="err";msg=e.message==="auth"?"الـ token مرفوض: اتأكد إن له صلاحية Contents: Read and write على الريبو.":navigator.onLine?"الرفع فشل، هحاول تاني المرة الجاية.":"مفيش نت، هيترفع لما يرجع."}
+  }catch(e){state="err";msg=e.message==="empty"?"الموبايل ده مفيهوش تمرينات، فمش هرفع عشان مامسحش النسخة اللي على GitHub. افتح داتا الكوتش بالباسورد (من التقدم) واضغط استرجع.":e.message==="auth"?"الـ token مرفوض: اتأكد إن له صلاحية Contents: Read and write على الريبو.":navigator.onLine?"الرفع فشل، هحاول تاني المرة الجاية.":"مفيش نت، هيترفع لما يرجع."}
   render();
 }
 async function restore(btn){
   btn.textContent="بجيب…";
   try{
     const cur=await remote();if(!cur){btn.textContent="مفيش نسخة على GitHub لسه";return}
-    const enc=JSON.parse(new TextDecoder().decode(ub(cur.content.replace(/\n/g,""))));
-    const data=await decryptWithStoredKey(enc);
-    const have=new Set(D.history.map(h=>h.startedAt));let added=0;
-    (data.history||[]).forEach(h=>{if(!have.has(h.startedAt)){D.history.push(h);added++}});
-    D.history.sort((a,b)=>a.startedAt-b.startedAt);
-    if(data.body){D.body=D.body||{};["waist","weight"].forEach(k=>{const m=new Map((D.body[k]||[]).map(x=>[x.date,x]));(data.body[k]||[]).forEach(x=>{if(!m.has(x.date))m.set(x.date,x)});D.body[k]=[...m.values()].sort((a,b)=>a.date<b.date?-1:1)})}
+    const added=mergeInto(await decryptWithStoredKey(decodeRemote(cur)));
     save();btn.textContent=added?`اترجع ${added} تمرينة ✓`:"كله موجود أصلاً ✓";window.GTT_refresh&&GTT_refresh();
   }catch(e){btn.textContent=e.message==="nokey"?"افتح داتا الكوتش بالباسورد الأول (من التقدم)":"الاسترجاع فشل"}
 }
