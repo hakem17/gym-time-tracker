@@ -98,5 +98,10 @@
   "file": "20261028T174455Z.enc.json",
   "label": "Nutrition 2026-10-28",
   "at": "20261028T174455Z"
+ },
+ {
+  "file": "20261029T202443Z.enc.json",
+  "label": "Nutrition 2026-10-29 (fasting)",
+  "at": "20261029T202443Z"
  }
 ]
