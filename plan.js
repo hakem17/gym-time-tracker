@@ -1,6 +1,6 @@
 /* absA/absB stay only so old workouts keep their names; abs is now a free block in the app (أشكال × مجموعات). */
 /* Coach-managed: exercises + current targets. Bump PLAN_VER on every target update. */
-const PLAN_VER="2026-10-28c";
+const PLAN_VER="2026-10-30a";
 /* ---------- default plan ---------- */
 const E=(id,name,sets,lo,hi,rest,unit,target,o={})=>({id,name,sets,lo,hi,rest,unit,target,...o});
 const DEFAULTS={
@@ -27,15 +27,15 @@ const DEFAULTS={
     E("pl9","هامر دامبل كيرل",3,10,12,90,"كجم","خطوة أتقل من 20 × 10–12 (20 جت 12 في الـ 3 ستات)",{left:true}),
   ],
   legs:[
-    E("lg1","Smith Squat",4,6,10,150,"كل ناحية","35 × 10 في الـ 4 ستات (الرابع جه 8). بعدها نجرب 40"),
-    E("lg2","Leg Press",3,10,12,120,"باوند","270 × 12 في الـ 3 ستات"),
-    E("lg3","Leg Extension",3,12,15,90,"بلطات","خطوة أتقل من 13 × 12–15 (13 جت 15، 15، 14)"),
-    E("lg4","Cable Pull-Through",3,10,12,90,"كجم","15 × 12 في الـ 3 ستات"),
+    E("lg1","Smith Squat",4,6,10,150,"كل ناحية","35 × 10 في أول 3 ستات، والرابع 40 × 8+"),
+    E("lg2","Leg Press",3,10,12,120,"باوند","خطوة أتقل من 270 × 10–12 (270 جت 12 في الـ 3)"),
+    E("lg3","Leg Extension",3,12,15,90,"بلطات","14 × 14–15 في الـ 3 ستات"),
+    E("lg4","Cable Pull-Through",3,10,12,90,"كجم","17.5 × 10–12 (15 جت 12 في الـ 3)"),
     E("lg5","Seated Leg Curl",3,10,12,90,"كجم","70 × 12 في الـ 3 ستات"),
     E("lg6","Hip Adduction",3,12,15,60,"كجم","اختياري، وبعد البطن مش قبلها",{optional:true}),
     E("lg7","Hip Abduction",3,12,15,60,"كجم","اختياري، وبعد البطن مش قبلها",{optional:true}),
-    E("lg8","Standing Calf",3,10,15,60,"كجم","خطوة أتقل من 96 × 12–15 (96 جت 15 في الـ 3 ستات)"),
-    E("lg9","Seated Calf",3,12,20,60,"كجم","25 × 20 في الـ 3 ستات"),
+    E("lg8","Standing Calf",3,10,15,60,"كجم","خطوة أتقل من 96 × 12–15. لو 96 آخر وزن قولي"),
+    E("lg9","Seated Calf",3,12,20,60,"كجم","خطوة أتقل من 25 × 15–20 (25 جت 20 في الـ 3)"),
   ],
   absA:[
     E("aa1","Machine Crunch",3,12,15,45,"كجم","140 × 12–15 في الـ 3 ستات"),
