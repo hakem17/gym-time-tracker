@@ -103,5 +103,10 @@
   "file": "20261029T202443Z.enc.json",
   "label": "Nutrition 2026-10-29 (fasting)",
   "at": "20261029T202443Z"
+ },
+ {
+  "file": "20261102T095459Z.enc.json",
+  "label": "New plan targets 3 Nov-10 Dec (2100/160); keep old 1760 for 20-29 Oct; remove 2 Nov maintenance",
+  "at": "20261102T095459Z"
  }
 ]
