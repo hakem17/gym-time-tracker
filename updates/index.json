@@ -123,5 +123,10 @@
   "file": "20261106T000123Z.enc.json",
   "label": "Nutrition 2026-11-05 (fasting)",
   "at": "20261106T000123Z"
+ },
+ {
+  "file": "20261106T205634Z.enc.json",
+  "label": "Nutrition 2026-11-06",
+  "at": "20261106T205634Z"
  }
 ]
