@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-11-06a";
+const BUILD="2026-11-08a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -425,9 +425,28 @@ function playOrder(items){
   return [...warm,...sortT(main),...timed,...sortT(abs)];
 }
 const reordered=items=>{const a=items.filter(x=>!x.timed&&!x.abs),b=playOrder(items).filter(x=>!x.timed&&!x.abs);return a.some((x,k)=>x!==b[k])};
+/* Lost time: every set is timestamped when you tick it. The gap between two ticks should be about
+   the planned rest + one set (≈45 s). Anything beyond that is time you weren't lifting or resting.
+   Gaps over 20 min (abs, cardio, a long break) are left out so they don't swamp the numbers. */
+function timeAudit(h){
+  const sets=[];
+  playOrder(h.items).forEach(x=>{if(x.timed||x.free||!x.logs)return;const p=planInfo2(x.id),rest=(p&&p.rest)||90;
+    x.logs.forEach((l,k)=>{if(l.t)sets.push({t:l.t,x,k,rest})})});
+  sets.sort((a,b)=>a.t-b.t);
+  let inS=0,between=0,nIn=0,nB=0;const gaps=[];
+  for(let i=1;i<sets.length;i++){const a=sets[i-1],b=sets[i],gap=(b.t-a.t)/1000;if(gap>1200)continue;
+    const plan=a.rest+WORK_S,over=Math.max(0,gap-plan),same=a.x===b.x;
+    if(same){inS+=over;nIn++}else{between+=over;nB++}
+    gaps.push({over,gap,plan,same,a,b})}
+  gaps.sort((p,q)=>q.over-p.over);
+  return sets.length<2?null:{inS:Math.round(inS/60),between:Math.round(between/60),total:Math.round((inS+between)/60),worst:gaps.filter(g=>g.over>=60).slice(0,3)};
+}
+const gapLbl=g=>g.same?`بين ست ${g.a.k+1} و${g.b.k+1} في ${g.a.x.name}`:`من ${g.a.x.name} لـ ${g.b.x.name}`;
 function summaryText(h){
   const dur=Math.round((h.finishedAt-h.startedAt)/60000);
-  const out=[`${DAYS[h.day].t} — ${dateLbl(h.startedAt)}`,`دخول ${clock(h.startedAt)}، خروج ${clock(h.finishedAt)} (${hm(dur)})`,""];
+  const out=[`${DAYS[h.day].t} — ${dateLbl(h.startedAt)}`,`دخول ${clock(h.startedAt)}، خروج ${clock(h.finishedAt)} (${hm(dur)})`];
+  const ta=timeAudit(h);if(ta)out.push(`وقت ضايع زيادة عن الراحة: ${ta.total} د (بين الستات ${ta.inS} د، بين التمارين ${ta.between} د)`);
+  out.push("");
   let n=1,absHead=false;
   if(reordered(h.items))out.push("(الترتيب ده هو اللي اتلعب فعلاً، مختلف عن ترتيب الخطة)","");
   playOrder(h.items).forEach(x=>{
@@ -450,6 +469,11 @@ function renderSummary(id){
   const isPR=x=>{const prev=bestEver(x.id,h.startedAt);return prev>0&&Math.max(...x.logs.map(l=>e1(l.w,l.r)))>prev*1.001};
   root.innerHTML=`<div class="hdr"><div><a class="back" href="#/">${ICON.chev}الرئيسية</a><h1>ملخص التمرين</h1><div class="sub">${DAYS[h.day].t} • ${dateLbl(h.startedAt)} • ${clock(h.startedAt)}</div></div></div>
     <div class="grid3"><div class="stat"><div class="k">المدة</div><div class="v num">${hm(m)}</div></div><div class="stat"><div class="k">تمارين</div><div class="v num">${ex.length}</div></div><div class="stat"><div class="k">ستات</div><div class="v num">${sets}</div></div></div>
+    ${(()=>{const ta=timeAudit(h);if(!ta)return"";return`<div class="sec"><h2>الوقت الضايع</h2></div>
+      <div class="card"><div class="muted" style="font-size:13px">الوقت اللي عدّى زيادة عن الراحة المكتوبة ووقت الست نفسه</div>
+      <div class="grid3" style="margin-top:10px"><div class="stat"><div class="k">المجموع</div><div class="v num" style="color:${ta.total>=20?"var(--warn)":"var(--ink)"}">${ta.total}<small> د</small></div></div>
+        <div class="stat"><div class="k">بين الستات</div><div class="v num">${ta.inS}<small> د</small></div></div><div class="stat"><div class="k">بين التمارين</div><div class="v num">${ta.between}<small> د</small></div></div></div>
+      ${ta.worst.length?`<div style="margin-top:10px;font-size:14px;display:grid;gap:6px">${ta.worst.map(g=>`<div>${esc(gapLbl(g))}: <b class="num">${fmt(g.gap)}</b> <span class="muted">بدل ${fmt(g.plan)}</span></div>`).join("")}</div>`:""}</div>`})()}
     <div class="sec"><h2>أداء التمارين</h2></div>
     <div class="list">${playOrder(h.items).map(x=>x.free?`<div class="row"><div class="grow"><div class="t">بطن</div><span class="s">${absTxt(x)}</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':'<span class="tag">لا</span>'}</span></div>`:x.timed?`<div class="row"><div class="grow"><div class="t">${esc(x.name)}</div><span class="s">${x.minutes} دقيقة</span></div><span class="end">${x.done?'<span class="tag lime">✓</span>':`<span class="tag">${x.skip||"لا"}</span>`}</span></div>`
       :(!x.logs.length&&x.optional)?"":`<div class="row">${IMG(imgOf(x.id),x.name,"thumb")||'<span class="thumb"></span>'}<div class="grow"><div class="t">${esc(x.name)} ${x.logs.length&&isPR(x)?'<span class="pr">PR</span>':""}</div><span class="s num">${x.logs.length?esc(setsTxt(x.logs,x)):`متلعبش${x.skip?` (${esc(x.skip)})`:""}`}${x.rir?` • RIR ${esc(x.rir)}`:""}</span></div>${x.logs.length?'<span class="tag lime">✓</span>':""}</div>`).join("")}</div>
