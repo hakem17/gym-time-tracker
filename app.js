@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-11-08b";
+const BUILD="2026-11-08c";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -28,7 +28,8 @@ let D=load();
     const it=h.items.find(x=>x.id==="lg2");if(it&&it.logs.length===4&&it.logs[3].w=="20"&&it.logs[3].r=="19")it.logs.pop()});D.fixes.lp2019=true}
   if(!D.fixes.cardio15){if(D.plans.cardio)D.plans.cardio.minutes=15;D.fixes.cardio15=true}
   if(!D.fixes.pu6machine){const x=(D.plans.push||[]).find(e=>e.id==="pu6");if(x){x.name="رفرفة جانبي جهاز";x.unit="بلطات"}D.fixes.pu6machine=true}
-  if(!D.fixes.rest30){["push","pull","legs"].forEach(k=>(D.plans[k]||[]).forEach(x=>{if((x.rest||90)<120)x.rest=(x.rest||90)+30}));D.fixes.rest30=true} // short rests +30 s (8 Nov test) // lateral raise moved to the machine // agreed: incline walk is 15 min
+  if(!D.fixes.rest30){["push","pull","legs"].forEach(k=>(D.plans[k]||[]).forEach(x=>{if((x.rest||90)<120)x.rest=(x.rest||90)+30}));D.fixes.rest30=true}
+  if(!D.fixes.fin1108){const h=D.history.find(x=>x.startedAt===1794109700978);if(h&&h.finishedAt-1794113969848>40*60000)h.finishedAt=1794113969848+28*60000;D.fixes.fin1108=true} // 8 Nov: finish tapped ~40 min late // short rests +30 s (8 Nov test) // lateral raise moved to the machine // agreed: incline walk is 15 min
   if(D.active&&!D.active.v2){D.active.items.forEach(it=>{if(!it.timed&&!it.rows){it.rows=(it.logs||[]).map(l=>({w:l.w,r:l.r,done:true,t:l.t}));while(it.rows.length<it.sets){const l=it.rows[it.rows.length-1];it.rows.push({w:l?l.w:"",r:l?l.r:"",done:false})}}});D.active.v2=true;D.active.rest=null}
   D.profile=D.profile||{name:"محمد"};
   save();
@@ -335,7 +336,7 @@ function wireSession(){
   q("[data-unskip]").forEach(b=>b.onclick=()=>{delete S.items[+b.dataset.unskip].skip;save();renderSession()});
   q("[data-time]").forEach(b=>b.onclick=()=>{unlock();const i=+b.dataset.time,it=S.items[i];startRest(it.minutes*60,it.name,i)});
   q("[data-fs]").forEach(b=>b.onclick=()=>{const it=S.items[+b.dataset.fs],k=b.dataset.k;it[k]=String(Math.min(8,Math.max(1,(+it[k]||0)+ +b.dataset.d)));save();renderSession()});
-  q("[data-mark]").forEach(b=>b.onclick=()=>{const i=+b.dataset.mark;S.items[i].done=true;if(S.rest&&S.rest.timed===i)stopRest();S.open=null;save();renderSession();focusCurrent()});
+  q("[data-mark]").forEach(b=>b.onclick=()=>{const i=+b.dataset.mark;S.items[i].done=true;S.items[i].doneAt=Date.now();if(S.rest&&S.rest.timed===i)stopRest();S.open=null;save();renderSession();focusCurrent()});
   q("[data-undo-timed]").forEach(b=>b.onclick=()=>{S.items[+b.dataset.undoTimed].done=false;save();renderSession()});
   q("[data-cue]").forEach(b=>b.onclick=()=>$("cue"+b.dataset.cue).classList.toggle("hidden"));
   q("[data-busy]").forEach(b=>b.onclick=()=>$("alt"+b.dataset.busy).classList.toggle("hidden"));
@@ -384,7 +385,11 @@ $("restMinus").onclick=()=>{const R=A()&&A().rest;if(!R)return;R.endsAt-=15000;s
 $("restSkip").onclick=()=>{const S=A();if(S&&S.rest&&S.rest.timed!=null){S.items[S.rest.timed].done=true;S.open=null}stopRest();if(curRoute&&curRoute.view==="workout"){renderSession();focusCurrent()}};
 
 function endSession(){
-  const S=A();if(!S)return;S.finishedAt=Date.now();stopRest();
+  const S=A();if(!S)return;
+  // forgot to tap finish? if nothing happened for 15+ min, end it a few minutes after the last action
+  const lastAct=Math.max(S.startedAt,...S.items.flatMap(x=>[x.doneAt||0,...(x.rows||[]).map(r=>r.done&&r.t||0)]));
+  const idle=Date.now()-lastAct>15*60000;
+  S.finishedAt=idle?lastAct+3*60000:Date.now();if(idle)setTimeout(()=>toast(`مضغطتش إنهاء: اتسجّل الخروج ${clock(S.finishedAt)}`),400);stopRest();
   const h={day:S.day,startedAt:S.startedAt,finishedAt:S.finishedAt,items:S.items.map(x=>x.free
     ?{id:"abs",name:"بطن",abs:true,free:true,done:!!x.done,shapes:x.done?+x.shapes:0,sets:x.done?+x.sets:0,skip:x.skip||"",logs:[]}
     :x.timed
@@ -410,7 +415,7 @@ function tick(){
   const C=2*Math.PI*24,p=$("restP");p.style.strokeDasharray=C;p.style.strokeDashoffset=C*(1-Math.max(0,l)/R.dur);
   if(l<=10&&l>0&&!R.warned){R.warned=true;warn()}
   if(l<=0&&!R.alerted){R.alerted=true;alarm();
-    if(R.timed!=null){S.items[R.timed].done=true;S.open=null}save();
+    if(R.timed!=null){S.items[R.timed].done=true;S.items[R.timed].doneAt=Date.now();S.open=null}save();
     if(R.timed!=null&&onW)renderSession();
     setTimeout(()=>{if(A()&&A().rest===R){stopRest();if(curRoute&&curRoute.view==="workout")focusCurrent()}},2500)}
 }
