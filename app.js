@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-11-11c";
+const BUILD="2026-11-13a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -32,7 +32,8 @@ let D=load();
   if(!D.fixes.fin1108){const h=D.history.find(x=>x.startedAt===1794109700978);if(h&&h.finishedAt-1794113969848>40*60000)h.finishedAt=1794113969848+28*60000;D.fixes.fin1108=true}
   if(!D.fixes.flatFirst){const P=D.plans.push||[],i3=P.findIndex(x=>x.id==="pu3"),i4=P.findIndex(x=>x.id==="pu4");if(i3>=0&&i4>i3){const [f]=P.splice(i4,1);P.splice(i3,0,f)}D.fixes.flatFirst=true}
   if(!D.fixes.row1111){const x=(D.plans.pull||[]).find(e=>e.id==="pl2");if(x){x.unit="بلطات";x.baselines=[...new Set([...(x.baselines||[]),"2026-11-11"])]}D.fixes.row1111=true}
-  if(!D.fixes.bicepsSplit){const P=D.plans.pull||[],ord=["pl1","pl2","pl3","pl4","pl7","pl5","pl8","pl6","pl9"];P.sort((a,b)=>{const i=ord.indexOf(a.id),j=ord.indexOf(b.id);return(i<0?99:i)-(j<0?99:j)});D.fixes.bicepsSplit=true} // biceps spread out between rear-delt work // new row machine: chart restarts here // flat press before cable fly // 8 Nov: finish tapped ~40 min late // short rests +30 s (8 Nov test) // lateral raise moved to the machine // agreed: incline walk is 15 min
+  if(!D.fixes.bicepsSplit){const P=D.plans.pull||[],ord=["pl1","pl2","pl3","pl4","pl7","pl5","pl8","pl6","pl9"];P.sort((a,b)=>{const i=ord.indexOf(a.id),j=ord.indexOf(b.id);return(i<0?99:i)-(j<0?99:j)});D.fixes.bicepsSplit=true}
+  if(!D.fixes.fin1112){const h=D.history.find(x=>x.startedAt===1794504803072);if(h&&h.finishedAt-1794510069310>3*3600e3)h.finishedAt=1794510069310+18*60000;D.fixes.fin1112=true} // 12 Nov: finish tapped next morning // biceps spread out between rear-delt work // new row machine: chart restarts here // flat press before cable fly // 8 Nov: finish tapped ~40 min late // short rests +30 s (8 Nov test) // lateral raise moved to the machine // agreed: incline walk is 15 min
   if(D.active&&!D.active.v2){D.active.items.forEach(it=>{if(!it.timed&&!it.rows){it.rows=(it.logs||[]).map(l=>({w:l.w,r:l.r,done:true,t:l.t}));while(it.rows.length<it.sets){const l=it.rows[it.rows.length-1];it.rows.push({w:l?l.w:"",r:l?l.r:"",done:false})}}});D.active.v2=true;D.active.rest=null}
   D.profile=D.profile||{name:"محمد"};
   save();
@@ -390,9 +391,11 @@ $("restSkip").onclick=()=>{const S=A();if(S&&S.rest&&S.rest.timed!=null){S.items
 function endSession(){
   const S=A();if(!S)return;
   // forgot to tap finish? if nothing happened for 15+ min, end it a few minutes after the last action
-  const lastAct=Math.max(S.startedAt,...S.items.flatMap(x=>[x.doneAt||0,...(x.rows||[]).map(r=>r.done&&r.t||0)]));
-  const idle=Date.now()-lastAct>15*60000;
-  S.finishedAt=idle?lastAct+3*60000:Date.now();if(idle)setTimeout(()=>toast(`مضغطتش إنهاء: اتسجّل الخروج ${clock(S.finishedAt)}`),400);stopRest();
+  // idle is judged from the last set: ticking cardio/abs as done later (e.g. next morning) doesn't count as activity
+  const lastSet=Math.max(S.startedAt,...S.items.flatMap(x=>(x.rows||[]).map(r=>r.done&&r.t||0)));
+  const extra=S.items.reduce((a,x)=>a+(x.timed&&x.done&&x.id!=="warmup"?x.minutes*60000:0)+(x.free&&x.done?10*60000:0),0);
+  const idle=Date.now()-lastSet-extra>20*60000;
+  S.finishedAt=idle?lastSet+extra+3*60000:Date.now();if(idle)setTimeout(()=>toast(`مضغطتش إنهاء: اتسجّل الخروج ${clock(S.finishedAt)}`),400);stopRest();
   const h={day:S.day,startedAt:S.startedAt,finishedAt:S.finishedAt,items:S.items.map(x=>x.free
     ?{id:"abs",name:"بطن",abs:true,free:true,done:!!x.done,shapes:x.done?+x.shapes:0,sets:x.done?+x.sets:0,skip:x.skip||"",logs:[]}
     :x.timed
