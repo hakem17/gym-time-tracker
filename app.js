@@ -3,7 +3,7 @@
 const DAYS={push:{t:"Push",ar:"الصدر والكتف والتراي",d:"صدر، كتف، تراي",ex:{cardio:true}},pull:{t:"Pull",ar:"الضهر والباي",d:"ضهر، كتف خلفي، باي",ex:{cardio:true}},legs:{t:"Legs",ar:"الرجل",d:"رجل وسمانة",ex:{abs:true}}};
 const UNITS=["كجم","كل ناحية","بلطات","باوند","وزن جسم"];
 const KEY="gym-time-tracker-v1";
-const BUILD="2026-11-13b";
+const BUILD="2026-11-15a";
 const ROTATION=["legs","push","pull"];
 const SKIP_REASONS=["زحمة","وقت","تعب","وجع","تاني"];
 const RIR_OPTS=[["0","0: فشل، مكنتش هعرف أعمل عدة كمان"],["1","1: كان فاضل عدة واحدة"],["2","2: كان فاضل عدتين"],["3","3: كان فاضل 3"],["4+","4 أو أكتر: خفيف"]];
@@ -91,6 +91,7 @@ document.addEventListener("pointerdown",unlock,{passive:true});
 
 /* ================= history lookups ================= */
 function lastFor(exId,before=Infinity){const H=histAll();for(let i=H.length-1;i>=0;i--){if(H[i].startedAt>=before)continue;const it=H[i].items.find(x=>x.id===exId&&x.logs&&x.logs.length);if(it)return{it,at:H[i].startedAt}}return null}
+function bestEver(exId){const H=histAll();let b=null,v=0;for(const h of H)for(const x of h.items)if(x.id===exId&&x.logs)for(const l of x.logs){const e=e1(l.w,l.r);if(e>v){v=e;b=l}}return b}
 function hintFor(ex){
   const L=lastFor(ex.id);if(!L||ex.seconds)return null;
   const logs=L.it.logs;
@@ -304,11 +305,13 @@ function exOpen(it,i,isCur){
       ${!it.done&&!it.skip?`<div class="ex-body" style="padding-top:0"><button class="link dim" data-skip="${i}">عدّيها</button><div class="chips hidden" id="sk${i}"></div></div>`:""}</div>`;
   const L=lastFor(it.id),prev=L?L.it.logs:[],h=hintFor(it),nd=doneRows(it).length,allDone=nd>=it.sets;
   const bestPrev=prev.reduce((a,l)=>e1(l.w,l.r)>e1(a.w,a.r)?l:a,prev[0]||{w:"",r:""});
+  const bestAll=it.seconds?null:bestEver(it.id);
   const unit=it.unit==="كل ناحية"?"ناحية":it.unit==="بلطات"?"بلطات":it.unit==="باوند"?"باوند":it.unit==="وزن جسم"?"وزن":"كجم";
   const activeJ=it.rows.findIndex(r=>!r.done);
   return`<div class="ex${isCur?" cur":""}${justOpened===i?" opening":""}" id="ex${i}">${head}<div class="ex-body">
     ${mus.length?`<div class="muscles">${mus.map((x,k)=>`<span class="tag${k<m.muscles.length?" lime":""}">${esc(x)}</span>`).join("")}${it.unit&&it.unit!=="كجم"?`<span class="tag">${esc(it.unit)}</span>`:""}</div>`:""}
     <div class="kv"><div><div class="k">آخر مرة</div><div class="v num">${bestPrev.r?(bestPrev.w?`${esc(bestPrev.w)}×${esc(bestPrev.r)}`:esc(bestPrev.r)):"—"}</div></div>
+      ${bestAll&&bestAll.w?`<div><div class="k">أعلى وزن</div><div class="v num">${esc(bestAll.w)}×${esc(bestAll.r)}</div></div>`:""}
       <div><div class="k">المطلوب</div><div class="v num">${it.sets}×${it.lo}–${it.hi}</div></div><div><div class="k">الراحة${(()=>{const r=restFor(it);return r<(it.rest||90)?' <span class="tag lime" style="font-size:10px">مختصرة</span>':""})()}</div><div class="v num">${fmt(restFor(it))}</div></div></div>
     ${it.target?`<div class="goal">الهدف: ${esc(it.target)}</div>`:""}
     ${h||it.left?`<div class="hintl">${[h,it.left?"ابدأ بالشمال":""].filter(Boolean).join(" • ")}</div>`:""}
@@ -368,6 +371,7 @@ function toggleSet(i,j){
   if(r.done){r.done=false;delete r.t;save();renderSession();return}
   if(!r.r){const inp=$("ex"+i).querySelector(`input[data-j="${j}"][data-f="r"]`);if(inp){inp.focus();inp.style.borderColor="var(--warn)"}return}
   r.done=true;r.t=Date.now();justDone=i+"-"+j;checkPR(it,r);
+  {const L=lastFor(it.id),pw=L?Math.max(...L.it.logs.map(l=>parseFloat(l.w)||0)):0,cw=parseFloat(r.w)||0;if(!it.seconds&&pw>0&&cw>0&&cw<pw)toast(`⚠ الوزن ${r.w} أقل من آخر مرة (${pw}). لو غلط، اضغط ✓ تاني وعدّله`)}
   it.rows.forEach((x,k)=>{if(k>j&&!x.done&&!x.touched)x.w=r.w}); // carry a changed weight to untouched sets below
   const allDone=doneRows(it).length>=it.sets,askRir=allDone&&!it.rir&&!it.abs&&!it.seconds;if(allDone){if(askRir)S.open=i;else{S.open=null;justOpened=curIndex()}}save();
   const left=S.items.some(x=>!isDone(x));renderSession();
