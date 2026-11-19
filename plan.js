@@ -1,6 +1,6 @@
 /* absA/absB stay only so old workouts keep their names; abs is now a free block in the app (أشكال × مجموعات). */
 /* Coach-managed: exercises + current targets. Bump PLAN_VER on every target update. */
-const PLAN_VER="2026-11-17a";
+const PLAN_VER="2026-11-19a";
 /* ---------- default plan ---------- */
 const E=(id,name,sets,lo,hi,rest,unit,target,o={})=>({id,name,sets,lo,hi,rest,unit,target,...o});
 const DEFAULTS={
@@ -50,7 +50,7 @@ const DEFAULTS={
 };
 
 /* Training block: 8 weeks (7 overload + deload). Week 1 = the Saturday-start week the PPL program began. */
-const PROGRAM={start:"2026-09-26",weeks:8,deloadWeek:8};
+const PROGRAM={start:"2026-09-26",weeks:8,deloadWeek:0};
 
 /* How to do each exercise (cues agreed in chat) and what to use when the machine is busy */
 const EXTRA={
